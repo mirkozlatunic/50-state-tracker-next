@@ -43,6 +43,9 @@ No other packages without asking me first.
 - Components with event handlers, hooks or browser APIs need `"use client"`.
 - Use next/link `<Link>` for internal links, never raw `<a>` tags.
 - Don't call setState synchronously inside useEffect; don't read refs during render.
+- Every server component that reads the database calls `await connection()`
+  (from next/server) first and sits inside `<Suspense>`; otherwise the build can
+  read the data once and freeze it into the page.
 - Buttons, fields, cards and pop-ups come from shadcn (`src/components/ui`).
   Use its sizes so buttons in a row line up; don't hand-roll button styles.
 
