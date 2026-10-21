@@ -63,6 +63,7 @@ No other packages without asking me first.
 
 - There are exactly 50 states.
 - A state can have several visits, but it counts only once in my progress.
+- "Today" is the date in Los Angeles (America/Los_Angeles), not the server's UTC date.
 - A visit date can't be in the future.
 - A planned trip must start in the future, and its end date can't be before its start date.
 - I can plan a trip to a state I've already visited.

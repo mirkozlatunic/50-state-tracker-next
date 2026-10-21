@@ -44,3 +44,8 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# local SQLite databases (my real data never goes in git)
+*.sqlite
+*.sqlite-*
+*.db
