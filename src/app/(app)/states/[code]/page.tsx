@@ -4,7 +4,8 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { buttonVariants } from "@/components/ui/button";
 import { PageBody, PageTitle } from "@/components/page-title";
-import { VisitActions } from "@/components/visit-actions";
+import { removeVisit } from "@/app/(app)/visits/actions";
+import { EditDeleteActions } from "@/components/edit-delete-actions";
 import { appDatabase } from "@/db/app";
 import { loadTrips, visitsForState } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
@@ -76,7 +77,12 @@ async function StateDetails({ code }: { code: string }) {
                   {visit.city && <> · {visit.city}</>}
                   {visit.note && <span className="text-muted-foreground"> · {visit.note}</span>}
                 </span>
-                <VisitActions visitId={visit.id} label={`${visit.visitDate} in ${STATE_NAMES[code]}`} />
+                <EditDeleteActions
+                  editHref={`/visits/${visit.id}/edit`}
+                  question="Delete this visit?"
+                  details={`The visit on ${visit.visitDate} in ${STATE_NAMES[code]} will be gone for good.`}
+                  deleteAction={removeVisit.bind(null, visit.id)}
+                />
               </li>
             ))}
           </ul>

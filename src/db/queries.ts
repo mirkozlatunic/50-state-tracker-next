@@ -2,8 +2,9 @@
 // database, so tests can pass a temporary one. Values are checked by the rules
 // (src/lib/rules.ts) before they get here.
 
-import { asc, countDistinct, desc, eq, exists, sql } from "drizzle-orm";
+import { asc, countDistinct, desc, eq, exists, inArray, sql } from "drizzle-orm";
 import type { Trip, Visit } from "@/lib/progress";
+import type { TripCity } from "@/lib/rules";
 import type { Database } from "./index";
 import { states, tripCities, trips, tripStates, visits } from "./schema";
 
@@ -114,4 +115,62 @@ export async function loadTrips(db: Database): Promise<Trip[]> {
     states: stateRows.filter((row) => row.tripId === trip.id).map((row) => row.code),
     cities: cityRows.filter((row) => row.tripId === trip.id).map(({ name, state }) => ({ name, state })),
   }));
+}
+
+export type TripValues = { name: string; startDate: string; endDate: string; states: string[]; cities: TripCity[] };
+
+/** The database or a transaction inside it: both can run the same queries. */
+type Writer = Parameters<Parameters<Database["transaction"]>[0]>[0] | Database;
+
+/** Link a trip to its states and cities (each state once). */
+async function saveTripPlaces(db: Writer, tripId: number, trip: TripValues) {
+  const codes = [...new Set([...trip.states, ...trip.cities.map((city) => city.state)])];
+  const rows = await db.select({ id: states.id, code: states.code }).from(states).where(inArray(states.code, codes));
+  const idOf = new Map(rows.map((row) => [row.code, row.id]));
+  const tripStateCodes = [...new Set(trip.states)];
+  if (tripStateCodes.length) {
+    await db.insert(tripStates).values(tripStateCodes.map((code) => ({ tripId, stateId: idOf.get(code)! })));
+  }
+  if (trip.cities.length) {
+    await db.insert(tripCities).values(trip.cities.map((city) => ({ tripId, stateId: idOf.get(city.state)!, city: city.name })));
+  }
+}
+
+/** Save a new trip with its states and cities; returns its id. A "transaction"
+ * saves all of it or nothing, so a trip is never left half-saved. */
+export async function addTrip(db: Database, trip: TripValues): Promise<number> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(trips)
+      .values({ name: trip.name, startDate: trip.startDate, endDate: trip.endDate })
+      .returning({ id: trips.id });
+    await saveTripPlaces(tx, row.id, trip);
+    return row.id;
+  });
+}
+
+/** One trip with its states and cities, or null if there's no trip with that id. */
+export async function getTrip(db: Database, id: number): Promise<Trip | null> {
+  return (await loadTrips(db)).find((trip) => trip.id === id) ?? null;
+}
+
+/** Change a trip: its name and dates, and replace its states and cities. */
+export async function updateTrip(db: Database, id: number, trip: TripValues): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.update(trips).set({ name: trip.name, startDate: trip.startDate, endDate: trip.endDate }).where(eq(trips.id, id));
+    await tx.delete(tripStates).where(eq(tripStates.tripId, id));
+    await tx.delete(tripCities).where(eq(tripCities.tripId, id));
+    await saveTripPlaces(tx, id, trip);
+  });
+}
+
+/** Change only a trip's dates (moving it to another year). */
+export async function setTripDates(db: Database, id: number, startDate: string, endDate: string): Promise<void> {
+  await db.update(trips).set({ startDate, endDate }).where(eq(trips.id, id));
+}
+
+/** Delete a trip; its states and cities go with it (ON DELETE CASCADE). False if there was no such trip. */
+export async function deleteTrip(db: Database, id: number): Promise<boolean> {
+  const deleted = await db.delete(trips).where(eq(trips.id, id)).returning({ id: trips.id });
+  return deleted.length > 0;
 }
