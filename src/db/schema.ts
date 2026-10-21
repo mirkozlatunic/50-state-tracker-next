@@ -54,3 +54,9 @@ export const tripCities = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.tripId, table.stateId, table.city] })],
 );
+
+// Wrong passwords, for the "5 tries, then wait a minute" rule (milliseconds since 1970).
+export const loginFailures = sqliteTable("login_failures", {
+  id: integer("id").primaryKey(),
+  failedAt: integer("failed_at").notNull(),
+});

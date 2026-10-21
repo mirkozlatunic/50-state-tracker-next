@@ -29,3 +29,19 @@ export async function setupDatabase(db: Database) {
     "write",
   );
 }
+
+// The app's one shared connection, set up the first time it's used.
+let appDatabase: Promise<Database> | null = null;
+
+/** The app's database, ready to use. Pass where it is (see src/lib/settings.ts). */
+export function getDatabase(config: DatabaseConfig): Promise<Database> {
+  appDatabase ??= (async () => {
+    const db = openDatabase(config);
+    await setupDatabase(db);
+    return db;
+  })().catch((error) => {
+    appDatabase = null; // try again on the next request instead of failing forever
+    throw error;
+  });
+  return appDatabase;
+}
