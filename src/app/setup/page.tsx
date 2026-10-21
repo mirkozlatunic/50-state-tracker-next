@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Set a password · 50 States Tracker" };
+export const metadata: Metadata = { title: "Set a password" };
 
 // Shown on every page until a password is set (proxy.ts sends requests here).
 export default function SetupPage() {

@@ -6,10 +6,10 @@ test.beforeEach(async ({ page }) => {
   await logIn(page);
 });
 
-test("the home page has the app's name", async ({ page }) => {
+test("every page carries the app's name", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveTitle("50 States Tracker");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("50 States Tracker");
+  await expect(page).toHaveTitle(/50 States Tracker$/);
+  await expect(page.getByRole("banner").getByRole("link", { name: "50 States Tracker" })).toBeVisible();
 });
 
 test("the page is in English", async ({ page }) => {

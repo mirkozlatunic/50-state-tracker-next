@@ -4,7 +4,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { MainNav } from "./main-nav";
+import { MainNav, NavLinks } from "./main-nav";
 import { ThemeToggle } from "./theme-toggle";
 import { CounterText, VisitedCounter } from "./visited-counter";
 
@@ -15,7 +15,9 @@ export function SiteHeader() {
         <Link href="/" className="order-1 font-semibold whitespace-nowrap">
           50 States Tracker
         </Link>
-        <MainNav />
+        <Suspense fallback={<NavLinks pathname="" />}>
+          <MainNav />
+        </Suspense>
         <div className="order-2 ml-auto flex items-center gap-2 sm:order-3">
           <Suspense fallback={<CounterText>… of 50</CounterText>}>
             <VisitedCounter />

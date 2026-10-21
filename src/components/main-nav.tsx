@@ -1,6 +1,7 @@
 "use client";
-// The main navigation. A client component, so it can mark the page you're on
-// (usePathname reads the current address).
+// The main navigation. MainNav marks the page you're on (usePathname reads the
+// current address); NavLinks draws the links, and the header also uses it
+// unmarked as the placeholder while the address isn't known yet.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,7 +16,11 @@ const LINKS = [
 ];
 
 export function MainNav() {
-  const pathname = usePathname();
+  return <NavLinks pathname={usePathname()} />;
+}
+
+/** The nav's links; the one matching `pathname` is marked as the current page. */
+export function NavLinks({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Main" className="order-3 w-full sm:order-2 sm:w-auto sm:flex-1">
       <ul className="flex items-center justify-between gap-1 sm:justify-start">
