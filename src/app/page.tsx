@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { logOut } from "./login/actions";
 
-// Placeholder home page for slice 0. The real pages arrive in slices 3–7.
+// Placeholder home page. The real pages arrive in slices 3–7.
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
@@ -8,9 +9,11 @@ export default function Home() {
       <p className="text-muted-foreground">
         The Next.js version is being built. The states, trips and map come next.
       </p>
-      <Button size="lg" disabled>
-        Coming soon
-      </Button>
+      <form action={logOut}>
+        <Button type="submit" variant="outline" size="lg">
+          Log out
+        </Button>
+      </form>
     </main>
   );
 }

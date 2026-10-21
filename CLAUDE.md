@@ -28,6 +28,9 @@ No other packages without asking me first.
 ## Setup and commands
 
 - Install: `pnpm install`
+- Set (or change) the app's password once: `pnpm set-password` in Terminal.app.
+  It saves only a hash and a new session secret in `.env.local`; restart the app afterwards.
+  Online, the same two values (PASSWORD_HASH, SESSION_SECRET) go in Vercel's settings.
 - Run the app: `pnpm dev`, then open http://localhost:3000
 - Checks (all must pass before a slice is done):
   `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` (Vitest),

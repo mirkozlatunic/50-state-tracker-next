@@ -41,3 +41,10 @@ CREATE TABLE IF NOT EXISTS trip_cities (
     city     TEXT NOT NULL,
     PRIMARY KEY (trip_id, state_id, city)
 );
+
+-- Wrong passwords, for the "5 tries, then wait a minute" rule. Only kept for a
+-- minute. failed_at is milliseconds since 1970.
+CREATE TABLE IF NOT EXISTS login_failures (
+    id        INTEGER PRIMARY KEY,
+    failed_at INTEGER NOT NULL
+);
