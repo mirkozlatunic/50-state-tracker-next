@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Log in · 50 States Tracker" };
+export const metadata: Metadata = { title: "Log in" };
 
 // The login page: one password for the whole app.
 export default function LoginPage() {

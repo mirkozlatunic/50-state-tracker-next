@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "50 States Tracker",
+  // Each page sets its own name, e.g. "States" becomes "States · 50 States Tracker".
+  title: { default: "50 States Tracker", template: "%s · 50 States Tracker" },
   description: "Track trips through all 50 US states.",
 };
 

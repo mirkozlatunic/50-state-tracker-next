@@ -2,15 +2,14 @@
 // shows it inside <Suspense> while the rest of the page is already there.
 
 import { connection } from "next/server";
-import { getDatabase } from "@/db";
+import { appDatabase } from "@/db/app";
 import { visitedStateCount } from "@/db/queries";
-import { databaseConfig } from "@/lib/settings";
 
 export async function VisitedCounter() {
   // Wait for a real visitor: without this, the build could read the database
   // once and bake that number into the page forever.
   await connection();
-  const count = await visitedStateCount(await getDatabase(databaseConfig()));
+  const count = await visitedStateCount(await appDatabase());
   return <CounterText>{`${count} of 50`}</CounterText>;
 }
 

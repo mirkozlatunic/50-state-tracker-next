@@ -3,18 +3,18 @@
 // server when the form is sent; Next.js only accepts them from this site.
 
 import { redirect } from "next/navigation";
-import { getDatabase } from "@/db";
+import { appDatabase } from "@/db/app";
 import { safeNext } from "@/lib/auth/access";
 import { clearFailures, isLocked, recordFailure } from "@/lib/auth/lockout";
 import { verifyPassword } from "@/lib/auth/password";
 import { getSession } from "@/lib/auth/server";
-import { databaseConfig, passwordHash } from "@/lib/settings";
+import { passwordHash } from "@/lib/settings";
 
 export type LoginState = { error: string | null };
 
 /** Check the password. Right: log in and go back to the page you wanted. Wrong: say so. */
 export async function logIn(_previous: LoginState, form: FormData): Promise<LoginState> {
-  const db = await getDatabase(databaseConfig());
+  const db = await appDatabase();
   const now = Date.now();
   if (await isLocked(db, now)) return { error: "Too many wrong passwords. Try again in a minute." };
 
