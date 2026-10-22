@@ -31,7 +31,7 @@ export function SiteHeader() {
       <Suspense fallback={<NavLinks pathname="" />}>
         <MainNav />
       </Suspense>
-      <span className="px-1">
+      <span className="flex items-center px-1">
         <Suspense fallback={<CounterSkeleton />}>
           <VisitedCounter />
         </Suspense>
