@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { VisitForm } from "@/components/visit-form";
 import { todayIn } from "@/lib/dates";
@@ -13,7 +14,7 @@ export default function NewVisitPage({ searchParams }: PageProps<"/visits/new">)
   return (
     <PageBody narrow>
       <PageTitle>Add a visit</PageTitle>
-      <Suspense>
+      <Suspense fallback={<FormSkeleton />}>
         <NewVisitForm searchParams={searchParams} />
       </Suspense>
     </PageBody>

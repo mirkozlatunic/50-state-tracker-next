@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { YearsSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { YearsBoard } from "@/components/years/years-board";
 import { appDatabase } from "@/db/app";
@@ -19,7 +20,7 @@ export default function YearsPage() {
       <p className="text-sm text-muted-foreground">
         Drag a trip by its handle to another year, or use its “Move to” menu.
       </p>
-      <Suspense fallback={<p className="text-muted-foreground">Loading years…</p>}>
+      <Suspense fallback={<YearsSkeleton />}>
         <Years />
       </Suspense>
     </PageBody>

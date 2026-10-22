@@ -155,3 +155,15 @@
     @apply font-sans;
   }
 }
+/* Date fields: iOS Safari draws its own date control with a minimum width
+   that ignores "full width", so it sticks out past the other fields. Dropping
+   the built-in styling (appearance) and that minimum width lines it up.
+   Outside any @layer on purpose, so Tailwind's base styles can't undo it. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}

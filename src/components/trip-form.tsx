@@ -74,7 +74,7 @@ function TripFields({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="start_date">Start date</Label>
           <Input
             id="start_date"
@@ -86,7 +86,7 @@ function TripFields({
             required
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="end_date">End date</Label>
           <Input id="end_date" name="end_date" type="date" defaultValue={values.endDate} required />
         </div>

@@ -6,7 +6,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { MainNav, NavLinks } from "./main-nav";
 import { ThemeToggle } from "./theme-toggle";
-import { CounterText, VisitedCounter } from "./visited-counter";
+import { CounterSkeleton } from "./loading-skeletons";
+import { VisitedCounter } from "./visited-counter";
 
 export function SiteHeader() {
   return (
@@ -19,7 +20,7 @@ export function SiteHeader() {
           <MainNav />
         </Suspense>
         <div className="order-2 ml-auto flex items-center gap-2 sm:order-3">
-          <Suspense fallback={<CounterText>… of 50</CounterText>}>
+          <Suspense fallback={<CounterSkeleton />}>
             <VisitedCounter />
           </Suspense>
           <ThemeToggle />

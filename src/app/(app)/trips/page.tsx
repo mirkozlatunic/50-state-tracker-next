@@ -4,6 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { removeTrip } from "@/app/(app)/trips/actions";
 import { EditDeleteActions } from "@/components/edit-delete-actions";
+import { ListSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { appDatabase } from "@/db/app";
@@ -24,7 +25,7 @@ export default function TripsPage() {
           Plan a trip
         </Link>
       </div>
-      <Suspense fallback={<p className="text-muted-foreground">Loading trips…</p>}>
+      <Suspense fallback={<ListSkeleton />}>
         <TripList />
       </Suspense>
     </PageBody>
