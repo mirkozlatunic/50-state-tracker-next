@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   // Each page sets its own name, e.g. "States" becomes "States · 50 States Tracker".
   title: { default: "50 States Tracker", template: "%s · 50 States Tracker" },
   description: "Track trips through all 50 US states.",
+  // The browser tab icon and the iPhone home screen icon (the Flask app's icons).
+  icons: {
+    icon: [{ url: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" }],
+    apple: "/icons/icon-180.png",
+  },
+  // "Add to Home Screen": opens full screen, with "50 States" under the icon.
+  appleWebApp: { capable: true, title: "50 States" },
 };
 
 // The phone's top bar matches the page background in each theme.

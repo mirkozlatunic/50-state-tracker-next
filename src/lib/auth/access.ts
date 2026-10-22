@@ -12,17 +12,23 @@ export function decideAccess({
   search,
   loggedIn,
   setUp,
+  serverAction = false,
 }: {
   pathname: string;
   search: string;
   loggedIn: boolean;
   setUp: boolean;
+  /** A form action (Next.js "Server Action"), not a page. */
+  serverAction?: boolean;
 }): Access {
   const isPublicFile = PUBLIC_FILES.includes(pathname) || PUBLIC_FOLDERS.some((folder) => pathname.startsWith(folder));
   if (isPublicFile) return { kind: "allow" };
   // Without a password the app never runs open: it explains how to set one.
   if (!setUp) return { kind: "setup" };
   if (loggedIn || pathname === "/login") return { kind: "allow" };
+  // Every form action checks the login itself first (requireLogin), and its
+  // redirect to /login is one the form understands; a redirect from here isn't.
+  if (serverAction) return { kind: "allow" };
   return { kind: "redirect", to: `/login?next=${encodeURIComponent(pathname + search)}` };
 }
 

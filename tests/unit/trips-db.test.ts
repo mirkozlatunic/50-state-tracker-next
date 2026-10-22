@@ -1,7 +1,7 @@
 // Slice 5: saving, changing and deleting trips in the database.
 // Each test gets its own temporary database.
 import { describe, expect, test } from "vitest";
-import { addTrip, addVisit, deleteTrip, getTrip, loadTrips, updateTrip } from "@/db/queries";
+import { addTrip, addVisit, deleteTrip, getTrip, loadTrips, setTripDates, updateTrip } from "@/db/queries";
 import { tripCities, tripStates, visits } from "@/db/schema";
 import { withTestDatabase } from "./db-helpers";
 
@@ -62,6 +62,18 @@ describe("trips", () => {
     expect(await db().$count(tripStates)).toBe(0);
     expect(await db().$count(tripCities)).toBe(0);
     expect(await db().$count(visits)).toBe(1);
+  });
+
+  test("moving a trip to another year changes only its dates, keeping its states and cities", async () => {
+    const id = await addTrip(db(), FOUR_CORNERS);
+    await setTripDates(db(), id, "2028-03-01", "2028-03-03");
+    expect(await getTrip(db(), id)).toMatchObject({
+      name: "Four Corners weekend",
+      startDate: "2028-03-01",
+      endDate: "2028-03-03",
+      cities: [{ name: "Moab", state: "UT" }],
+    });
+    expect([...(await getTrip(db(), id))!.states].sort()).toEqual(["AZ", "UT"]);
   });
 
   test("deleting an unknown trip gives false", async () => {

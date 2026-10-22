@@ -27,6 +27,16 @@ describe("who may open a page", () => {
     },
   );
 
+  test("a form action goes on to its own login check, which sends you to the login page properly", () => {
+    expect(decideAccess({ ...loggedOut, pathname: "/visits/new", serverAction: true })).toEqual({ kind: "allow" });
+  });
+
+  test("without a password set, even form actions are stopped", () => {
+    expect(decideAccess({ loggedIn: false, setUp: false, pathname: "/visits/new", search: "", serverAction: true })).toEqual({
+      kind: "setup",
+    });
+  });
+
   test("logged in, every page opens: one login is enough", () => {
     for (const pathname of ["/", "/states", "/trips/3/edit", "/login"]) {
       expect(decideAccess({ loggedIn: true, setUp: true, pathname, search: "" })).toEqual({ kind: "allow" });

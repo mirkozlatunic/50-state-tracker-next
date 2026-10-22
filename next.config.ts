@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   // The home page opens the states list.
+  // Browsers ask for /favicon.ico by themselves; answer with the PNG tab icon.
+  async rewrites() {
+    return [{ source: "/favicon.ico", destination: "/icons/favicon-32.png" }];
+  },
   async redirects() {
     return [{ source: "/", destination: "/states", permanent: false }];
   },
