@@ -11,9 +11,12 @@ async function forgetWrongTries() {
   db.$client.close();
 }
 
-/** Type a password on the login page, press "Log in", and wait for the answer
- * (the form clears itself afterwards, so typing early would be lost). */
+/** Type a password on the login page, press "Log in", and wait for the answer.
+ * After a wrong password the form clears itself a moment after the answer, so
+ * first wait for an empty field and a ready button; typing earlier would be lost. */
 async function submitPassword(page: import("@playwright/test").Page, password: string) {
+  await expect(page.getByLabel("Password")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Log in" })).toBeEnabled();
   await page.getByLabel("Password").fill(password);
   const answer = page.waitForResponse((response) => response.request().method() === "POST");
   await page.getByRole("button", { name: "Log in" }).click();
