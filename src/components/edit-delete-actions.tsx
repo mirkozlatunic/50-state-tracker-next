@@ -1,9 +1,9 @@
 "use client";
-// Edit and Delete for one visit: two ghost buttons of the same size on one
-// line. Delete asks first, in a shadcn "Are you sure?" pop-up.
+// Edit and Delete for one row (a visit or a trip): two ghost buttons of the
+// same size on one line. Delete asks first, in a shadcn "Are you sure?" pop-up,
+// then runs `deleteAction` (a server action, passed in by the page).
 
 import Link from "next/link";
-import { removeVisit } from "@/app/(app)/visits/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +17,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 
-export function VisitActions({ visitId, label }: { visitId: number; label: string }) {
+export function EditDeleteActions({
+  editHref,
+  question,
+  details,
+  deleteAction,
+}: {
+  editHref: string;
+  question: string;
+  details: string;
+  deleteAction: () => Promise<void>;
+}) {
   return (
     <div className="flex items-center gap-1">
-      <Link href={`/visits/${visitId}/edit`} className={buttonVariants({ variant: "ghost" })} data-slot="button">
+      <Link href={editHref} className={buttonVariants({ variant: "ghost" })} data-slot="button">
         Edit
       </Link>
       <AlertDialog>
@@ -32,12 +42,12 @@ export function VisitActions({ visitId, label }: { visitId: number; label: strin
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this visit?</AlertDialogTitle>
-            <AlertDialogDescription>The visit on {label} will be gone for good.</AlertDialogDescription>
+            <AlertDialogTitle>{question}</AlertDialogTitle>
+            <AlertDialogDescription>{details}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <form action={removeVisit.bind(null, visitId)}>
+            <form action={deleteAction}>
               <AlertDialogAction type="submit" variant="destructive" className="w-full">
                 Delete
               </AlertDialogAction>
