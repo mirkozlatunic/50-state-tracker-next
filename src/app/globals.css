@@ -36,6 +36,7 @@
   --color-dot-visited: var(--dot-visited);
   --color-dot-upcoming: var(--dot-upcoming);
   --color-map-stroke: var(--map-stroke);
+  --color-dot-ring: var(--dot-ring);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -65,6 +66,7 @@
   --dot-visited: #14532d;
   --dot-upcoming: #1d4ed8;
   --map-stroke: #ffffff;
+  --dot-ring: #ffffff;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -107,6 +109,8 @@
   --dot-visited: #0b2e17;
   --dot-upcoming: #60a5fa;
   --map-stroke: #0a0a0a;
+  /* A light ring keeps the dark green dots visible on dark and green areas. */
+  --dot-ring: #e5e5e5;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
