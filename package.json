@@ -10,7 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "set-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/set-password.ts"
+    "set-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/set-password.ts",
+    "test:live": "playwright test --config playwright.live.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

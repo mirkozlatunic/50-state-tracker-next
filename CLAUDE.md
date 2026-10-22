@@ -8,8 +8,10 @@ A small web app to track my trips through all 50 US states: which states I've
 visited, when, and which weekend trips are planned next.
 Private learning project. The data is my own real trip data.
 
-This is the Next.js rewrite of the Flask app (`50-state-tracker`). The Flask
-app stays live until this one is finished and I approve the switch.
+This is the Next.js rewrite of the Flask app (`50-state-tracker`). Since
+2026-10-22 it's the live app (https://50-state-tracker-next.vercel.app) on the
+Turso database `tracker`; previews use `tracker-preview`. The Flask site stays
+up as a fallback until 2026-11-05; switching it off needs my OK.
 
 ## About me
 
@@ -35,6 +37,8 @@ No other packages without asking me first.
 - Checks (all must pass before a slice is done):
   `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` (Vitest),
   `pnpm test:e2e` (Playwright)
+- After a deploy: `pnpm test:live` checks the online site (no password needed).
+- Keep the Mac awake and plugged in while the browser tests run; sleep makes them fail.
 
 ## Next.js / React conventions
 
