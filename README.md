@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 50 States Tracker
 
-## Getting Started
+Track trips through all 50 US states: which states I've visited, when, and
+which trips are planned next. Next.js + shadcn/ui, with the data in Turso
+(hosted SQLite), hosted on Vercel. It replaces the Flask app
+([50-state-tracker](https://github.com/mirkozlatunic/50-state-tracker)).
 
-First, run the development server:
+Live: https://50-state-tracker-next.vercel.app
+
+## On the computer
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm set-password   # once, in Terminal.app; saves a hash in .env.local
+pnpm dev            # then open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The computer uses its own database file, `local.sqlite` (git ignores it).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm lint && pnpm typecheck && pnpm build
+pnpm test        # unit tests (Vitest), each with its own temporary database
+pnpm test:e2e    # browser tests (Playwright), desktop and iPhone sizes
+pnpm test:live   # checks against the online site (no password needed)
+```
 
-## Learn More
+Keep the Mac awake and plugged in while the browser tests run; sleep makes them fail.
 
-To learn more about Next.js, take a look at the following resources:
+## Settings on Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Project → Settings → Environment Variables. Paste values without quotes, and
+redeploy after changing one (settings only reach new deployments).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Name | What it is | Production | Preview |
+|---|---|---|---|
+| `DATABASE_URL` | The Turso database address | `tracker` (real data) | `tracker-preview` (test data) |
+| `DATABASE_AUTH_TOKEN` | Its token: `turso db tokens create <name>` | for `tracker` | for `tracker-preview` |
+| `PASSWORD_HASH` | From `.env.local` after `pnpm set-password` | same | same |
+| `SESSION_SECRET` | From `.env.local` after `pnpm set-password` | same | same |
 
-## Deploy on Vercel
+## Moving the data (from the Flask app, or from a backup)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+A backup is one SQLite file with the same tables in both apps, so it loads
+straight into Turso:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Download a backup: "Download backup" at the bottom of any page.
+2. Create a database from it: `turso db create tracker --from-file ~/Downloads/tracker-YYYY-MM-DD.sqlite`
+   (a new name if `tracker` already exists).
+3. Point Production at it: change `DATABASE_URL` and `DATABASE_AUTH_TOKEN` on Vercel, then redeploy.
+4. Run `pnpm test:live`, then log in and look around.
+
+## iPhone home screen
+
+Open the live address in Safari, log in, then Share → Add to Home Screen. It
+opens full screen on the map, with the name "50 States".
