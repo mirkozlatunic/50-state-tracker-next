@@ -6,6 +6,7 @@ on:
   pull_request:
 
 jobs:
+  # Lint, typecheck, build and unit tests: quick, on one machine.
   check:
     runs-on: ubuntu-latest
     steps:
@@ -20,5 +21,26 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
+
+  # The browser tests, split over 3 machines running at the same time. Each
+  # machine runs a third of the tests against its own built app and its own
+  # test database, so they can't get in each other's way.
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium webkit
-      - run: pnpm test:e2e
+      - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
+        env:
+          E2E_BUILT: "1"

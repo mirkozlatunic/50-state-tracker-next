@@ -23,6 +23,7 @@ The computer uses its own database file, `local.sqlite` (git ignores it).
 pnpm lint && pnpm typecheck && pnpm build
 pnpm test        # unit tests (Vitest), each with its own temporary database
 pnpm test:e2e    # browser tests (Playwright), desktop and iPhone sizes
+E2E_BUILT=1 pnpm test:e2e   # the same, against the built app (after pnpm build), like GitHub
 pnpm test:live   # checks against the online site (no password needed)
 ```
 
