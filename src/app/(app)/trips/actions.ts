@@ -4,9 +4,10 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { appDatabase } from "@/db/app";
-import { addTrip, deleteTrip, getTrip, updateTrip } from "@/db/queries";
+import { addTrip, deleteTrip, getTrip, setTripDates, updateTrip } from "@/db/queries";
 import { requireLogin } from "@/lib/auth/server";
 import { todayIn } from "@/lib/dates";
+import { planMove } from "@/lib/rules";
 import { checkTripForm, returnPath, type TripFormValues } from "@/lib/trip-form";
 
 export type TripFormState = { errors: string[]; values: TripFormValues | null };
@@ -34,4 +35,22 @@ export async function removeTrip(tripId: number, returnTo: string): Promise<void
   await deleteTrip(await appDatabase(), tripId);
   refresh();
   redirect(returnPath(returnTo));
+}
+
+/** Move a trip to another year (the "Move to" menu, or dropping its card on a
+ * year): same month, day and length. Returns the reason if the move breaks a
+ * trip rule; nothing changes then. */
+export async function moveTrip(tripId: number, year: string): Promise<{ error: string | null }> {
+  await requireLogin();
+  const db = await appDatabase();
+  const trip = await getTrip(db, tripId);
+  if (!trip) return { error: "This trip doesn't exist anymore." };
+
+  const plan = planMove(trip, year, todayIn());
+  if (plan.kind === "error") return { error: plan.message };
+  if (plan.kind === "move") {
+    await setTripDates(db, tripId, plan.startDate, plan.endDate);
+    refresh();
+  }
+  return { error: null };
 }
