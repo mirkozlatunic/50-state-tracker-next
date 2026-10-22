@@ -97,6 +97,11 @@ test.describe("on a computer: the map", () => {
     await expect(page.getByText(`Planned in ${NEXT_YEAR}`)).toBeVisible();
   });
 
+  test("hovering a state shows its name", async ({ page }) => {
+    await page.goto("/map");
+    await expect(stateShape(page, "CO").locator("title")).toHaveText("Colorado");
+  });
+
   test("a bad year in the address is ignored", async ({ page }) => {
     await seed({ trips: [{ name: "Weekend", start: daysFromToday(7), end: daysFromToday(9), states: ["UT"] }] });
     await page.goto("/map?year=banana");

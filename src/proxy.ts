@@ -21,7 +21,9 @@ export async function proxy(request: NextRequest) {
   }
 
   const { pathname, search } = request.nextUrl;
-  const access = decideAccess({ pathname, search, loggedIn, setUp });
+  // Form actions are sent with a "Next-Action" header naming the action.
+  const serverAction = request.method === "POST" && request.headers.has("next-action");
+  const access = decideAccess({ pathname, search, loggedIn, setUp, serverAction });
   if (access.kind === "redirect") return NextResponse.redirect(new URL(access.to, request.url));
   if (access.kind === "setup") return NextResponse.rewrite(new URL("/setup", request.url), { status: 503 });
 

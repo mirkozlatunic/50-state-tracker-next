@@ -149,6 +149,22 @@ test.describe("adding a visit", () => {
     await expect(page.getByText("Layovers don't count.")).toBeVisible();
   });
 
+  test("a lower-case state in the link is still chosen", async ({ page }) => {
+    await page.goto("/visits/new?state=ca");
+    await expect(page.getByRole("combobox", { name: "State" })).toHaveText(/California/);
+  });
+
+  test("a form sent after the login ran out saves nothing and asks for the password", async ({ page, context }) => {
+    await page.goto("/visits/new?state=CA");
+    await page.getByLabel("Visit date").fill("2024-07-04");
+    await page.getByLabel("Note").fill("should not be saved");
+    await context.clearCookies(); // as if the 30 days ran out while the form was open
+    await page.getByRole("button", { name: "Save visit" }).click();
+    await expect(page).toHaveURL(/\/login/);
+    await logIn(page, "/states/CA");
+    await expect(page.getByText("No visits yet.")).toBeVisible();
+  });
+
   test("an unknown state in the link falls back to the placeholder", async ({ page }) => {
     await page.goto("/visits/new?state=DC");
     await expect(page.getByRole("combobox", { name: "State" })).toHaveText(/Choose a state/);
