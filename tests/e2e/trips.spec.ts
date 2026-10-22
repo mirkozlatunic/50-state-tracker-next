@@ -2,7 +2,7 @@
 // (the same checks as the Flask app's trip tests).
 import { expect, test, type Page } from "@playwright/test";
 import { addTrip, addVisit, getTrip } from "@/db/queries";
-import { daysFromToday, logIn, openTestDatabase, resetData, today } from "./helpers";
+import { daysFromToday, expectCurrentPage, logIn, openTestDatabase, resetData, today } from "./helpers";
 import { expectCentersLineUp } from "./layout-helpers";
 
 type NewTrip = { name: string; startDate: string; endDate: string; states: string[]; cities?: { name: string; state: string }[] };
@@ -57,10 +57,7 @@ test.describe("the trips page", () => {
     await expect(page).toHaveTitle("Trips · 50 States Tracker");
     await expect(page.getByText("No trips planned yet.")).toBeVisible();
     await expect(page.getByRole("link", { name: "Plan a trip" })).toHaveAttribute("href", "/trips/new");
-    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Trips" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    await expectCurrentPage(page, "Trips");
   });
 
   test("lists a trip with its dates, states (linking to their pages) and cities", async ({ page }) => {

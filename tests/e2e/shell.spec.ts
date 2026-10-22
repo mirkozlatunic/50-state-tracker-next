@@ -1,7 +1,9 @@
-// Slice 3: the app shell — header, nav, counter, light/dark switch and footer,
-// on desktop and iPhone, with the buttons measured to line up.
+// Slice 3: the app shell — header, nav, counter and light/dark switch, on
+// desktop and iPhone, with the buttons measured to line up.
+// Slice 11: the header is a fixed pill that stays on screen while scrolling,
+// and Download backup and Log out moved from the footer into its menu.
 import { expect, test, type Page } from "@playwright/test";
-import { logIn, TEST_DB_URL } from "./helpers";
+import { expectCurrentPage, logIn, openNavMenu, TEST_DB_URL } from "./helpers";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
 import { openDatabase, setupDatabase } from "@/db";
 import { visitedStateCount } from "@/db/queries";
@@ -18,6 +20,8 @@ const header = (page: Page) => page.getByRole("banner");
 const nav = (page: Page) => page.getByRole("navigation", { name: "Main" });
 const themeButton = (page: Page) => page.getByRole("button", { name: "Switch between light and dark mode" });
 const counter = (page: Page) => header(page).getByText(/^\d+ of 50$/);
+const menuButton = (page: Page) => header(page).getByRole("button", { name: /^(Account|Menu)$/ });
+const isPhone = (projectName: string) => projectName === "iphone";
 
 test.beforeEach(async ({ page }) => {
   await logIn(page);
@@ -28,10 +32,20 @@ test.describe("the header", () => {
     await expect(header(page).getByRole("link", { name: "50 States Tracker" })).toHaveAttribute("href", "/");
   });
 
-  test("the nav links to every part of the app, in order", async ({ page }) => {
+  test("on a computer, the nav links to every part of the app, in order", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "computer layout");
     const links = nav(page).getByRole("link");
     await expect(links).toHaveText(NAV.map(([name]) => name));
     for (const [name, href] of NAV) await expect(nav(page).getByRole("link", { name })).toHaveAttribute("href", href);
+  });
+
+  test("on a phone, the menu lists every part of the app, then backup and log out", async ({ page }, info) => {
+    test.skip(!isPhone(info.project.name), "phone layout");
+    await openNavMenu(page);
+    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Download backup", "Log out"]);
+    await page.getByRole("menuitem", { name: "Trips" }).click();
+    await expect(page).toHaveURL("/trips");
+    await expectCurrentPage(page, "Trips");
   });
 
   test("the counter shows the visited states from the database", async ({ page }) => {
@@ -42,7 +56,8 @@ test.describe("the header", () => {
     await expect(counter(page)).toHaveText(`${count} of 50`);
   });
 
-  test("the nav items are shadcn buttons of one size", async ({ page }) => {
+  test("the nav items are shadcn buttons of one size", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "the phone's nav is in the menu");
     const items = await nav(page).getByRole("link").all();
     const heights = await Promise.all(items.map(async (item) => (await item.boundingBox())?.height));
     expect(new Set(heights).size).toBe(1);
@@ -50,22 +65,64 @@ test.describe("the header", () => {
   });
 });
 
-test.describe("the footer", () => {
-  test("has Download backup and Log out, lined up", async ({ page }) => {
-    const footer = page.getByRole("contentinfo");
-    const backup = footer.getByRole("link", { name: "Download backup" });
-    const logOut = footer.getByRole("button", { name: "Log out" });
-    await expect(backup).toHaveAttribute("href", "/backup");
-    await expectCentersLineUp([backup, logOut]);
+test.describe("the menu at the top", () => {
+  test("has Download backup and Log out", async ({ page }) => {
+    await openNavMenu(page);
+    await expect(page.getByRole("menuitem", { name: "Download backup" })).toHaveAttribute("href", "/backup");
+    await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
+  });
+
+  test("there's no footer any more", async ({ page }) => {
+    await expect(page.getByRole("contentinfo")).toHaveCount(0);
   });
 });
 
-test("logged out, the login page shows no header nav, counter or footer", async ({ browser }) => {
+test.describe("the header stays on screen", () => {
+  // A short window, so every page has room to scroll.
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: page.viewportSize()!.width, height: 500 });
+  });
+
+  test("it doesn't cover the page's title", async ({ page }) => {
+    await page.goto("/states");
+    const pill = await header(page).boundingBox();
+    const title = await page.getByRole("heading", { level: 1 }).boundingBox();
+    expect(title!.y).toBeGreaterThanOrEqual(pill!.y + pill!.height);
+  });
+
+  test("after scrolling down it's still at the top, and a tap opens it again", async ({ page }, info) => {
+    await page.goto("/states");
+    await page.mouse.wheel(0, 1500);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+    // Scrolled down, it shrinks to a round button that's still on screen.
+    const collapsed = header(page).getByRole("button", { name: "Show navigation" });
+    await expect(collapsed).toBeInViewport();
+    await collapsed.click();
+    if (isPhone(info.project.name)) {
+      await openNavMenu(page);
+      await page.getByRole("menuitem", { name: "Trips" }).click();
+    } else {
+      await nav(page).getByRole("link", { name: "Trips" }).click();
+    }
+    await expect(page).toHaveURL("/trips");
+  });
+
+  test("scrolling back up opens it again by itself", async ({ page }) => {
+    await page.goto("/states");
+    await page.mouse.wheel(0, 1500);
+    await expect(header(page).getByRole("button", { name: "Show navigation" })).toBeVisible();
+    await page.mouse.wheel(0, -400);
+    await expect(header(page).getByRole("button", { name: "Show navigation" })).toHaveCount(0);
+    await expect(menuButton(page)).toBeInViewport();
+  });
+});
+
+test("logged out, the login page shows no header nav, counter or menu", async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   await page.goto("/login");
   await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
   await expect(page.getByText(/^\d+ of 50$/)).toHaveCount(0);
-  await expect(page.getByRole("contentinfo")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^(Account|Menu)$/ })).toHaveCount(0);
 });
 
 test.describe("light and dark", () => {
@@ -107,35 +164,29 @@ test.describe("light and dark", () => {
 });
 
 test.describe("layout", () => {
-  test("on a computer, the brand, nav, counter and switch sit on one line", async ({ page }, info) => {
-    test.skip(info.project.name !== "desktop", "computer layout");
+  test("on a computer, the brand, nav, counter, switch and menu sit on one line", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "computer layout");
     const brand = header(page).getByRole("link", { name: "50 States Tracker" });
-    await expectCentersLineUp([brand, ...(await nav(page).getByRole("link").all()), counter(page), themeButton(page)]);
+    await expectCentersLineUp([
+      brand,
+      ...(await nav(page).getByRole("link").all()),
+      counter(page),
+      themeButton(page),
+      menuButton(page),
+    ]);
   });
 
-  test("on a phone, the brand, counter and switch are one line, with the nav below", async ({ page }, info) => {
-    test.skip(info.project.name !== "iphone", "phone layout");
+  test("on a phone, the brand, counter, switch and menu button sit on one line", async ({ page }, info) => {
+    test.skip(!isPhone(info.project.name), "phone layout");
     const brand = header(page).getByRole("link", { name: "50 States Tracker" });
-    await expectCentersLineUp([brand, counter(page), themeButton(page)]);
-    const navItems = await nav(page).getByRole("link").all();
-    await expectCentersLineUp(navItems);
-    const brandBox = await brand.boundingBox();
-    const navBox = await nav(page).boundingBox();
-    expect(navBox!.y).toBeGreaterThan(brandBox!.y + brandBox!.height);
+    await expectCentersLineUp([brand, counter(page), themeButton(page), menuButton(page)]);
   });
 
-  test("on a phone, header and footer buttons are big enough for a finger", async ({ page }, info) => {
-    test.skip(info.project.name !== "iphone", "touch screens");
-    const footer = page.getByRole("contentinfo");
-    await expectAtLeastTall(
-      [
-        ...(await nav(page).getByRole("link").all()),
-        themeButton(page),
-        footer.getByRole("link", { name: "Download backup" }),
-        footer.getByRole("button", { name: "Log out" }),
-      ],
-      44,
-    );
+  test("on a phone, the header's buttons and menu items are big enough for a finger", async ({ page }, info) => {
+    test.skip(!isPhone(info.project.name), "touch screens");
+    await expectAtLeastTall([themeButton(page), menuButton(page)], 44);
+    await openNavMenu(page);
+    await expectAtLeastTall(await page.getByRole("menuitem").all(), 44);
   });
 
   for (const [device, width] of [["iPhone", 390], ["iPad", 820]] as const) {

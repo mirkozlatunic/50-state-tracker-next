@@ -1,7 +1,7 @@
 // Slice 2: one password for the whole app (the same checks as the Flask app's test_login.py).
 import { expect, test } from "@playwright/test";
 import { openDatabase, setupDatabase } from "@/db";
-import { logIn, TEST_DB_URL, TEST_PASSWORD } from "./helpers";
+import { logIn, openNavMenu, TEST_DB_URL, TEST_PASSWORD } from "./helpers";
 
 /** Forget all wrong passwords, so one test's tries don't pause the next test's login. */
 async function forgetWrongTries() {
@@ -100,7 +100,8 @@ test("a made-up cookie doesn't log you in", async ({ page, context }) => {
 
 test("logging out", async ({ page }) => {
   await logIn(page);
-  await page.getByRole("button", { name: "Log out" }).click();
+  await openNavMenu(page);
+  await page.getByRole("menuitem", { name: "Log out" }).click();
   await expect(page).toHaveURL("/login");
   await page.goto("/");
   await expect(page).toHaveURL(/\/login/);

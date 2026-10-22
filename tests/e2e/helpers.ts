@@ -18,6 +18,27 @@ export async function logIn(page: Page, next = "/") {
   await expect(page).not.toHaveURL(/\/login/);
 }
 
+/** Open the header's menu: "Account" on a computer, "Menu" on a phone (where it holds the pages too). */
+export async function openNavMenu(page: Page) {
+  await page.getByRole("banner").getByRole("button", { name: /^(Account|Menu)$/ }).click();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  // It zooms in from 95%; wait until it's full size before anything measures it.
+  await expect.poll(() => menu.evaluate((element) => element.getAnimations().length)).toBe(0);
+}
+
+/** The header marks `name` as the page you're on: in the nav on a computer, in the menu on a phone. */
+export async function expectCurrentPage(page: Page, name: string) {
+  const nav = page.getByRole("navigation", { name: "Main" });
+  if (await nav.isVisible()) {
+    await expect(nav.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
+  } else {
+    await openNavMenu(page);
+    await expect(page.getByRole("menuitem", { name })).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
+  }
+}
+
 /** Open the test app's database (made up for the tests, never the real data). */
 export async function openTestDatabase() {
   const db = openDatabase({ url: TEST_DB_URL });
