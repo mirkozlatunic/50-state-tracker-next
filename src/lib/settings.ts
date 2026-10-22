@@ -16,9 +16,11 @@ export function isSetUp(): boolean {
   return passwordHash() !== "" && sessionSecret().length >= 32;
 }
 
-/** The login cookie is https-only online; `pnpm dev` on the computer uses plain http. */
-export function secureCookies(): boolean {
-  return process.env.NODE_ENV === "production";
+/** The login cookie is https-only online; `pnpm dev` on the computer uses plain http.
+ * A test server that runs the built app without https (GitHub's browser tests)
+ * switches it off with SESSION_COOKIE_SECURE=false. `env` is passed in for tests. */
+export function secureCookies(env: Record<string, string | undefined> = process.env): boolean {
+  return env.NODE_ENV === "production" && env.SESSION_COOKIE_SECURE !== "false";
 }
 
 /** Where the database is: Turso online, a local file on the computer. */

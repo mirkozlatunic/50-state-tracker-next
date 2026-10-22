@@ -9,6 +9,7 @@ jobs:
   # Lint, typecheck, build and unit tests: quick, on one machine.
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -27,6 +28,7 @@ jobs:
   # test database, so they can't get in each other's way.
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -40,7 +42,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      # Sometimes GitHub's package download hangs; give up after 5 minutes instead of waiting forever.
       - run: pnpm exec playwright install --with-deps chromium webkit
+        timeout-minutes: 5
       - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
         env:
           E2E_BUILT: "1"

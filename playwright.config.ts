@@ -32,6 +32,10 @@ export default defineConfig({
       PASSWORD_HASH: hashPasswordSync(TEST_PASSWORD),
       SESSION_SECRET: TEST_SESSION_SECRET,
       DATABASE_URL: TEST_DB_URL,
+      // The built app runs in production mode, which makes the login cookie
+      // https-only; the test server is plain http, and WebKit on Linux then
+      // drops the cookie. Online, the cookie stays https-only.
+      SESSION_COOKIE_SECURE: "false",
     },
     timeout: 120_000,
   },
