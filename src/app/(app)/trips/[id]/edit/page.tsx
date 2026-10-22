@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { TripForm } from "@/components/trip-form";
 import { appDatabase } from "@/db/app";
@@ -16,7 +17,7 @@ export default function EditTripPage({ params, searchParams }: PageProps<"/trips
   return (
     <PageBody narrow>
       <PageTitle>Edit trip</PageTitle>
-      <Suspense>
+      <Suspense fallback={<FormSkeleton />}>
         <EditTrip params={params} searchParams={searchParams} />
       </Suspense>
     </PageBody>

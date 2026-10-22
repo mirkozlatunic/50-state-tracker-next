@@ -1,5 +1,5 @@
 // The "12 of 50" counter in the header. It reads the database, so the header
-// shows it inside <Suspense> while the rest of the page is already there.
+// shows a placeholder for it while the rest of the page is already there.
 
 import { connection } from "next/server";
 import { appDatabase } from "@/db/app";
@@ -13,7 +13,7 @@ export async function VisitedCounter() {
   return <CounterText>{`${count} of 50`}</CounterText>;
 }
 
-/** The counter's look, shared with the placeholder shown while it loads. */
-export function CounterText({ children }: { children: string }) {
+/** The counter's look. */
+function CounterText({ children }: { children: string }) {
   return <span className="text-sm font-medium whitespace-nowrap tabular-nums text-muted-foreground">{children}</span>;
 }

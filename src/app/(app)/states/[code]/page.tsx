@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { StateSkeleton } from "@/components/loading-skeletons";
 import { buttonVariants } from "@/components/ui/button";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { removeVisit } from "@/app/(app)/visits/actions";
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: PageProps<"/states/[code]">):
 export default function StatePage({ params }: PageProps<"/states/[code]">) {
   return (
     <PageBody>
-      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+      <Suspense fallback={<StateSkeleton />}>
         <StateContent params={params} />
       </Suspense>
       <p>

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { MapSkeleton } from "@/components/loading-skeletons";
 import { MapLegend } from "@/components/map/map-legend";
 import { NextTripCard, RegionCard } from "@/components/map/region-cards";
 import { UsMap } from "@/components/map/us-map";
@@ -22,7 +23,7 @@ export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <PageBody>
       <PageTitle>Map</PageTitle>
-      <Suspense fallback={<p className="text-muted-foreground">Loading the map…</p>}>
+      <Suspense fallback={<MapSkeleton />}>
         <MapContent searchParams={searchParams} />
       </Suspense>
     </PageBody>

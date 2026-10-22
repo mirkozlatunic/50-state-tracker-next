@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { TitledFormSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { TripForm } from "@/components/trip-form";
 import { todayIn } from "@/lib/dates";
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Plan a trip" };
 export default function NewTripPage({ searchParams }: PageProps<"/trips/new">) {
   return (
     <PageBody narrow>
-      <Suspense>
+      <Suspense fallback={<TitledFormSkeleton />}>
         <NewTrip searchParams={searchParams} />
       </Suspense>
     </PageBody>

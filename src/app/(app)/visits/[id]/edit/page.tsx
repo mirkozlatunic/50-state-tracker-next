@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { VisitForm } from "@/components/visit-form";
 import { appDatabase } from "@/db/app";
@@ -15,7 +16,7 @@ export default function EditVisitPage({ params }: PageProps<"/visits/[id]/edit">
   return (
     <PageBody narrow>
       <PageTitle>Edit visit</PageTitle>
-      <Suspense>
+      <Suspense fallback={<FormSkeleton />}>
         <EditVisitForm params={params} />
       </Suspense>
     </PageBody>

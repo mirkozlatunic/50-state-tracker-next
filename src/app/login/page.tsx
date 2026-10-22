@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSkeleton } from "@/components/loading-skeletons";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Log in" };
@@ -18,7 +19,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {/* The form reads the address (?next=...), which needs a Suspense boundary. */}
-          <Suspense>
+          <Suspense fallback={<FormSkeleton fields={1} />}>
             <LoginForm />
           </Suspense>
         </CardContent>
