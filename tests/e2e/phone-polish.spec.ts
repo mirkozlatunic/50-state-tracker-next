@@ -57,6 +57,7 @@ test("on a phone, the states sit in two columns", async ({ page }, info) => {
 test.describe("date fields line up with the other fields", () => {
   /** Every date field and text field in the form is exactly as wide as the form. */
   async function expectFieldsFullWidth(page: Page) {
+    await expect(page.getByRole("main").locator("form")).toBeVisible(); // after the loading skeleton
     const form = (await page.getByRole("main").locator("form").boundingBox())!;
     // The typed-in fields by name (menus and checkboxes also keep invisible helper fields).
     const fields = page
@@ -72,10 +73,14 @@ test.describe("date fields line up with the other fields", () => {
 
   test("the visit form's date field is as wide as the note field", async ({ page }) => {
     await page.goto("/visits/new");
+    // The form shows after its loading skeleton, so wait for both fields first.
+    await expect(page.getByLabel("Visit date")).toBeVisible();
+    await expect(page.getByLabel("Note")).toBeVisible();
     // Measured until it settles: the dev server can add the styles a moment after the page.
     const gap = async () => {
-      const date = (await page.getByLabel("Visit date").boundingBox())!;
-      const note = (await page.getByLabel("Note").boundingBox())!;
+      const date = await page.getByLabel("Visit date").boundingBox();
+      const note = await page.getByLabel("Note").boundingBox();
+      if (!date || !note) return Infinity; // not drawn yet: measure again
       return Math.max(Math.abs(date.x - note.x), Math.abs(date.width - note.width));
     };
     await expect.poll(gap).toBeLessThanOrEqual(0.5);
