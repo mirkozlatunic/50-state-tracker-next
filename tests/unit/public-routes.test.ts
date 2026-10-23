@@ -13,6 +13,7 @@ describe("open without signing in", () => {
     "/manifest.webmanifest",
     "/favicon.ico",
     "/icons/icon-180.png",
+    "/logo.png", // the badge on the sign-in page (and next/image fetches it without signing in)
   ])("%s", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });

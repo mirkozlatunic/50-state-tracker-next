@@ -31,6 +31,16 @@ test.describe("the header", () => {
     await expect(header(page).getByRole("link", { name: "50 States Tracker" })).toHaveAttribute("href", "/");
   });
 
+  test("shows the badge logo, loaded and cut to a circle", async ({ page }) => {
+    const logo = header(page).getByRole("link", { name: "50 States Tracker" }).locator("img");
+    await expect(logo).toHaveCount(1);
+    await expect(logo).toHaveAttribute("src", /logo/);
+    await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    const box = (await logo.boundingBox())!;
+    expect(box.width).toBe(box.height);
+    expect(await logo.evaluate((img) => getComputedStyle(img).borderRadius)).toMatch(/^(50%|\d{3,}px)$/);
+  });
+
   test("on a computer, the nav links to every part of the app, in order", async ({ page }, info) => {
     test.skip(isPhone(info.project.name), "computer layout");
     const links = nav(page).getByRole("link");
