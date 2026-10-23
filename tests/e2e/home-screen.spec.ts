@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, test, type APIResponse } from "@playwright/test";
 import { addVisit } from "@/db/queries";
-import { logIn, openTestDatabase, resetData, today } from "./helpers";
+import { logIn, openNavMenu, openTestDatabase, resetData, today, userId } from "./helpers";
 
 /** The width and height of a PNG image, read from its header. */
 async function pngSize(response: APIResponse): Promise<[number, number]> {
@@ -48,7 +48,7 @@ test.describe("Add to Home Screen (works logged out, like Flask)", () => {
   });
 
   test("every page links the manifest and icons, and can run full screen as “50 States”", async ({ page }) => {
-    for (const url of ["/login", "/states"]) {
+    for (const url of ["/sign-in", "/states"]) {
       if (url === "/states") await logIn(page, url);
       else await page.goto(url);
       const head = page.locator("head");
@@ -64,13 +64,15 @@ test.describe("Add to Home Screen (works logged out, like Flask)", () => {
 test.describe("Download backup", () => {
   test.beforeEach(resetData);
 
-  test("downloads the whole database as tracker-<today>.sqlite", async ({ page }, info) => {
+  test("downloads my visits and trips (nobody else's) as tracker-<today>.sqlite", async ({ page }, info) => {
     const db = await openTestDatabase();
-    await addVisit(db, { state: "CO", visitDate: "2024-07-04", note: "Red Rocks", city: "Denver" });
+    await addVisit(db, userId(), { state: "CO", visitDate: "2024-07-04", note: "Red Rocks", city: "Denver" });
+    await addVisit(db, userId("B"), { state: "UT", visitDate: "2024-07-05", note: "someone else's", city: null });
     db.$client.close();
     await logIn(page);
     const download = page.waitForEvent("download");
-    await page.getByRole("contentinfo").getByRole("link", { name: "Download backup" }).click();
+    await openNavMenu(page);
+    await page.getByRole("menuitem", { name: "Download backup" }).click();
     const file = await download;
     expect(file.suggestedFilename()).toBe(`tracker-${today()}.sqlite`);
     const path = info.outputPath("backup.sqlite");
@@ -82,9 +84,9 @@ test.describe("Download backup", () => {
     expect(notes).toEqual(["Red Rocks"]);
   });
 
-  test("logged out, the backup asks for the password instead", async ({ browser }) => {
+  test("signed out, the backup asks you to sign in instead", async ({ browser }) => {
     const page = await (await browser.newContext()).newPage();
     await page.goto("/backup");
-    await expect(page).toHaveURL(/\/login\?next=%2Fbackup/);
+    await expect(page).toHaveURL(/\/sign-in/);
   });
 });

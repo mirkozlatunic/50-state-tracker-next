@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -34,6 +35,25 @@ export const viewport: Viewport = {
   ],
 };
 
+// Clerk's sign-in forms drawn with the shadcn colors from globals.css.
+const CLERK_APPEARANCE = {
+  variables: {
+    colorPrimary: "var(--primary)",
+    colorPrimaryForeground: "var(--primary-foreground)",
+    colorBackground: "var(--card)",
+    colorForeground: "var(--card-foreground)",
+    colorMutedForeground: "var(--muted-foreground)",
+    colorMuted: "var(--muted)",
+    colorInput: "var(--background)",
+    colorInputForeground: "var(--foreground)",
+    colorBorder: "var(--border)",
+    colorRing: "var(--ring)",
+    colorDanger: "var(--destructive)",
+    borderRadius: "var(--radius)",
+    fontFamily: "var(--font-geist-sans)",
+  },
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // suppressHydrationWarning: next-themes adds class="dark" to <html> before
@@ -44,7 +64,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        {/* ClerkProvider lets every page know who's signed in. Its forms use the
+            app's own colors (CSS variables), so they follow light and dark too. */}
+        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/sign-in" appearance={CLERK_APPEARANCE}>
+          <ThemeProvider>{children}</ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

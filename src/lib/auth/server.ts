@@ -1,17 +1,13 @@
-// The login, as used by pages and form actions on the server.
-import { cookies } from "next/headers";
+// Who's signed in, as used by pages and form actions on the server.
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { getIronSession } from "iron-session";
-import { secureCookies, sessionSecret } from "@/lib/settings";
-import { sessionOptions, type SessionData } from "./session";
 
-/** This browser's login session (read from, and saved to, its cookie). */
-export async function getSession() {
-  return getIronSession<SessionData>(await cookies(), sessionOptions({ secret: sessionSecret(), secure: secureCookies() }));
-}
-
-/** Stop unless this browser is logged in. Every form action that changes data
- * calls this itself, instead of only relying on proxy.ts. */
-export async function requireLogin(): Promise<void> {
-  if (!(await getSession()).loggedIn) redirect("/login");
+/** The signed-in person's Clerk id (like "user_2ab..."), which marks whose
+ * visits and trips are whose. Signed out: off to the sign-in page instead.
+ * Every page and form action that touches data calls this itself, instead of
+ * only relying on proxy.ts. */
+export async function requireUserId(): Promise<string> {
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
+  return userId;
 }

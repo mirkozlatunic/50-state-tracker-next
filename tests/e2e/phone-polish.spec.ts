@@ -1,7 +1,7 @@
 // Slice 10: phone polish — searching the states list, two columns on phones,
 // date fields lined up with the other fields (also in Safari's engine).
 import { devices, expect, test, webkit, type Page } from "@playwright/test";
-import { logIn, resetData } from "./helpers";
+import { goTo, logIn, resetData } from "./helpers";
 
 const search = (page: Page) => page.getByRole("searchbox", { name: "Search states" });
 const stateLinks = (page: Page) => page.getByRole("main").getByRole("list").getByRole("link");
@@ -57,7 +57,7 @@ test("on a phone, the states sit in two columns", async ({ page }, info) => {
 test.describe("date fields line up with the other fields", () => {
   /** Every date field and text field in the form is exactly as wide as the form. */
   async function expectFieldsFullWidth(page: Page) {
-    await expect(page.getByRole("main").locator("form")).toBeVisible(); // after the loading skeleton
+    await expect(page.getByRole("main").locator("form")).toBeVisible(); // after the loader
     const form = (await page.getByRole("main").locator("form").boundingBox())!;
     // The typed-in fields by name (menus and checkboxes also keep invisible helper fields).
     const fields = page
@@ -73,7 +73,7 @@ test.describe("date fields line up with the other fields", () => {
 
   test("the visit form's date field is as wide as the note field", async ({ page }) => {
     await page.goto("/visits/new");
-    // The form shows after its loading skeleton, so wait for both fields first.
+    // The form shows after its loader, so wait for both fields first.
     await expect(page.getByLabel("Visit date")).toBeVisible();
     await expect(page.getByLabel("Note")).toBeVisible();
     // Measured until it settles: the dev server can add the styles a moment after the page.
@@ -110,7 +110,7 @@ test.describe("date fields line up with the other fields", () => {
       const date = (await page.getByLabel("Visit date").boundingBox())!;
       const note = (await page.getByLabel("Note").boundingBox())!;
       expect(Math.abs(date.width - note.width)).toBeLessThanOrEqual(0.5);
-      await page.goto("/trips/new");
+      await goTo(page, "/trips/new");
       await expectFieldsFullWidth(page);
     } finally {
       await browser.close();

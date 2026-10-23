@@ -24,22 +24,25 @@ when you use them. Prefer simple, readable code over clever code.
 Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui (Base UI),
 lucide-react, next-themes, drizzle-orm + drizzle-kit, @libsql/client (Turso
 online, a local SQLite file in development and tests), Server Actions + zod,
-iron-session, @dnd-kit, Vitest, Playwright. Hosted on Vercel.
+Clerk (@clerk/nextjs; @clerk/testing for the browser tests), motion, @dnd-kit,
+Vitest, Playwright. Hosted on Vercel.
 No other packages without asking me first.
 
 ## Setup and commands
 
 - Install: `pnpm install`
-- Set (or change) the app's password once: `pnpm set-password` in Terminal.app.
-  It saves only a hash and a new session secret in `.env.local`; restart the app afterwards.
-  Online, the same two values (PASSWORD_HASH, SESSION_SECRET) go in Vercel's settings.
+- Signing in is Clerk (clerk.com, a development app for now). Its two keys,
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY, go in `.env.local`,
+  in Vercel's settings and in GitHub's secrets (for the checks). I add them myself.
 - Run the app: `pnpm dev`, then open http://localhost:3000
 - Checks (all must pass before a slice is done):
   `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` (Vitest),
   `pnpm test:e2e` (Playwright)
 - `E2E_BUILT=1 pnpm test:e2e` (after `pnpm build`) runs the browser tests against the
   built app, like GitHub does (split over 3 machines); plain `pnpm test:e2e` uses the dev server.
-- After a deploy: `pnpm test:live` checks the online site (no password needed).
+- After a deploy: `pnpm test:live` checks the online site (no account needed).
+- The browser tests sign in as two Clerk test people
+  (tracker-a/tracker-b+clerk_test@example.com; code 424242, no real email).
 - Keep the Mac awake and plugged in while the browser tests run; sleep makes them fail.
 
 ## Next.js / React conventions
@@ -69,11 +72,16 @@ No other packages without asking me first.
   page. Editing follows the same rules as adding a visit.
 - The map outlines come from a CC0 (public domain) Wikimedia Commons SVG.
 - The tables match the Flask app (states, visits, trips, trip_states,
-  trip_cities), so a Flask backup file imports straight into Turso.
+  trip_cities), plus a `user_id` on visits and trips (whose they are), so a
+  Flask backup file imports straight into Turso. Rows without an owner ("")
+  show up for nobody until they're given to someone.
 
 ## Hard rules
 
 - There are exactly 50 states.
+- Anyone can sign up (email code or Google, through Clerk). Each person has
+  their own tracker: they see and change only their own visits and trips,
+  and someone else's visit or trip acts as if it didn't exist.
 - A state can have several visits, but it counts only once in my progress.
 - "Today" is the date in Los Angeles (America/Los_Angeles), not the server's UTC date.
 - A visit date can't be in the future.
@@ -94,19 +102,19 @@ No other packages without asking me first.
 - City dots: dark green = visited city, blue = city in a trip that hasn't
   ended. A city that's both shows blue. One dot per city.
 - Every city in the city list must land inside its own state's outline.
-- One password for the whole app: log in once and every page opens; a device
-  stays logged in for 30 days. Logged out, every page goes to /login, except
-  the styles, icons and manifest.
-- After 5 wrong passwords, logging in pauses for 1 minute.
+- Signed out, every page goes to /sign-in (and back afterwards), except
+  sign-in, sign-up, the styles, icons and manifest. The old /login goes to /sign-in.
+- Every page and form action checks who's signed in itself (requireUserId),
+  not only proxy.ts.
 - On phones (640px wide or less), `/map` shows the next trip and the four
   Census regions as cards instead of the map. Bigger screens keep the map.
 - In every row of buttons, the buttons' vertical centers line up within 1px.
 
 ## Folder and secret rules
 
-- Never commit `.env*` files, database files, the session secret or the
-  password hash. Secrets live in Vercel's settings and a local `.env.local`.
-- I type passwords myself; never put one in a command or a file.
+- Never commit `.env*` files, database files or the Clerk secret key.
+  Secrets live in Vercel's settings, GitHub's secrets and a local `.env.local`.
+- I type passwords and secret keys myself; never put one in a command or a file.
 - Tests use their own temporary database, never my real one.
 - Don't put my computer's name in committed files.
 

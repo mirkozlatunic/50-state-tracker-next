@@ -1,29 +1,7 @@
-import { Suspense } from "react";
-import type { Metadata } from "next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormSkeleton } from "@/components/loading-skeletons";
-import { LoginForm } from "./login-form";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Log in" };
-
-// The login page: one password for the whole app.
+// The old password page's address. Signing in is Clerk's job now, so old links
+// and home-screen icons that still open /login go on to the sign-in page.
 export default function LoginPage() {
-  return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-16">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <h1 className="text-xl font-semibold">Log in</h1>
-          </CardTitle>
-          <CardDescription>You stay logged in on this device for 30 days.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* The form reads the address (?next=...), which needs a Suspense boundary. */}
-          <Suspense fallback={<FormSkeleton fields={1} />}>
-            <LoginForm />
-          </Suspense>
-        </CardContent>
-      </Card>
-    </main>
-  );
+  redirect("/sign-in");
 }

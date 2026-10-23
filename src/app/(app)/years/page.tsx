@@ -5,6 +5,7 @@ import { YearsSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { YearsBoard } from "@/components/years/years-board";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { loadTrips, loadVisits } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { yearPlan } from "@/lib/progress";
@@ -30,7 +31,8 @@ export default function YearsPage() {
 /** The columns, read fresh from the database on every visit. */
 async function Years() {
   await connection();
+  const userId = await requireUserId(); // only this person's visits and trips
   const db = await appDatabase();
-  const plan = yearPlan({ visits: await loadVisits(db), trips: await loadTrips(db) }, todayIn());
+  const plan = yearPlan({ visits: await loadVisits(db, userId), trips: await loadTrips(db, userId) }, todayIn());
   return <YearsBoard plan={plan} />;
 }

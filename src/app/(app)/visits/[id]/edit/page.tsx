@@ -6,6 +6,7 @@ import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { VisitForm } from "@/components/visit-form";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { getVisit } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 
@@ -26,8 +27,9 @@ export default function EditVisitPage({ params }: PageProps<"/visits/[id]/edit">
 /** The form, once the visit is loaded; an unknown visit shows "Not found". */
 async function EditVisitForm({ params }: Pick<PageProps<"/visits/[id]/edit">, "params">) {
   await connection();
+  const userId = await requireUserId(); // only this person's visits and trips
   const id = Number((await params).id);
-  const visit = Number.isInteger(id) ? await getVisit(await appDatabase(), id) : null;
+  const visit = Number.isInteger(id) ? await getVisit(await appDatabase(), userId, id) : null;
   if (!visit) notFound();
   return (
     <VisitForm

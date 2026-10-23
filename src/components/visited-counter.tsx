@@ -3,13 +3,15 @@
 
 import { connection } from "next/server";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { visitedStateCount } from "@/db/queries";
 
 export async function VisitedCounter() {
   // Wait for a real visitor: without this, the build could read the database
   // once and bake that number into the page forever.
   await connection();
-  const count = await visitedStateCount(await appDatabase());
+  const userId = await requireUserId(); // only this person's visits and trips
+  const count = await visitedStateCount(await appDatabase(), userId);
   return <CounterText>{`${count} of 50`}</CounterText>;
 }
 
