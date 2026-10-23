@@ -2,18 +2,24 @@
 // as the map (year filter included), and the next trip on top.
 
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { STATE_NAMES } from "@/lib/data/states";
 import type { RegionSummary, StateStatus, Trip } from "@/lib/progress";
 
+// Planned chips get the map's thin navy stripes over a light gold (see map-legend.tsx).
 const CHIP: Record<StateStatus, string> = {
   visited: "bg-visited/15 text-visited-text",
-  planned: "bg-planned/25 text-foreground",
+  planned:
+    "bg-planned/25 text-foreground [background-image:repeating-linear-gradient(45deg,color-mix(in_srgb,var(--planned-foreground)_15%,transparent)_0_1.5px,transparent_1.5px_6px)]",
   unvisited: "bg-muted text-muted-foreground",
 };
 
-/** One region: its name, "6 of 13", a green/orange bar, and a chip per state. */
+// What screen readers hear after the state's name; "not visited" says nothing.
+const STATUS_WORDS: Record<StateStatus, string> = { visited: ", visited", planned: ", planned", unvisited: "" };
+
+/** One region: its name, "6 of 13", a sage/gold bar, and a chip per state. */
 export function RegionCard({ region }: { region: RegionSummary }) {
   const headingId = `region-${region.name.toLowerCase()}`;
   return (
@@ -36,8 +42,14 @@ export function RegionCard({ region }: { region: RegionSummary }) {
                 <Link
                   href={`/states/${state.code}`}
                   data-status={state.status}
+                  // What screen readers hear, e.g. "Colorado, visited, 2 visited cities".
+                  aria-label={`${state.name}${STATUS_WORDS[state.status]}${
+                    state.cityCount > 0 ? `, ${state.cityCount} visited ${state.cityCount === 1 ? "city" : "cities"}` : ""
+                  }`}
+                  data-stripes-swatch={state.status === "planned" ? "" : undefined}
                   className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm pointer-coarse:min-h-11 ${CHIP[state.status]}`}
                 >
+                  {state.status === "visited" && <Check className="size-3.5" aria-hidden />}
                   {state.name}
                   {state.cityCount > 0 && (
                     <span className="rounded-full bg-background/70 px-1.5 text-xs tabular-nums">{state.cityCount}</span>

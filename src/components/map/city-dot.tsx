@@ -32,8 +32,10 @@ export function CityDot({
         data-kind={kind}
         style={{ left, top }}
         // The dot is 9px; the invisible ::after ring makes it easier to hit.
-        className={`absolute size-[9px] -translate-1/2 rounded-full ring-[1.5px] ring-dot-ring after:absolute after:-inset-1.5 after:content-[''] focus-visible:outline-2 focus-visible:outline-ring ${
-          kind === "upcoming" ? "bg-dot-upcoming" : "bg-dot-visited"
+        // A visited city is a solid dot; an upcoming one is hollow with a gold
+        // ring, so the two differ in shape and not only in color.
+        className={`absolute size-[9px] -translate-1/2 rounded-full after:absolute after:-inset-1.5 after:content-[''] focus-visible:outline-2 focus-visible:outline-ring ${
+          kind === "upcoming" ? "bg-card ring-2 ring-dot-upcoming" : "bg-dot-visited ring-[1.5px] ring-dot-ring"
         }`}
       />
       <PopoverContent side="top" className="w-64">

@@ -94,13 +94,18 @@ No other packages without asking me first.
 - A trip belongs to the year it starts in. Trips that have ended are hidden.
 - Moving a trip to another year keeps its month, day and length
   (Feb 29 becomes Feb 28 in a year without one). The trip rules still apply.
-- Map colors: green = visited, orange = in a trip that hasn't ended,
-  grey = neither. Visited wins over planned.
+- Map colors (brand palette): sage = visited, gold = in a trip that hasn't
+  ended (also striped), pale grey-green = neither. Visited wins over planned.
+  Status never relies on color alone (stripes, check marks, words for screen readers).
 - Cities don't change the progress: it still counts states.
 - A city must exist in the city list and be in its state. A trip's cities
   must be in one of the trip's states.
-- City dots: dark green = visited city, blue = city in a trip that hasn't
-  ended. A city that's both shows blue. One dot per city.
+- City dots: solid navy (light in dark mode) = visited city, hollow with a
+  gold ring = city in a trip that hasn't ended. A city that's both shows the
+  gold ring. One dot per city.
+- Brand palette (src/app/globals.css): navy #16364B, sage #8FA28B, gold
+  #F1B84A, warm off-white #FBFAF7, plus a matching dark theme. Text on gold is
+  navy; every text color passes 4.5 : 1 contrast (tests/unit/palette.test.ts).
 - Every city in the city list must land inside its own state's outline.
 - Signed out, every page goes to /sign-in (and back afterwards), except
   sign-in, sign-up, the styles, icons and manifest. The old /login goes to /sign-in.

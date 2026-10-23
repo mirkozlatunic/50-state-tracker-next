@@ -167,8 +167,9 @@ test.describe("light and dark", () => {
   });
 
   test("the phone's top bar color matches the page in each theme", async ({ page }) => {
-    await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: light)"]')).toHaveCount(1);
-    await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]')).toHaveCount(1);
+    // The warm off-white page and the dark theme's navy background.
+    await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: light)"]')).toHaveAttribute("content", "#FBFAF7");
+    await expect(page.locator('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]')).toHaveAttribute("content", "#101C25");
   });
 });
 
