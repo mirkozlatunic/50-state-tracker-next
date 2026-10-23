@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, test, type APIResponse } from "@playwright/test";
 import { addVisit } from "@/db/queries";
-import { logIn, openTestDatabase, resetData, today } from "./helpers";
+import { logIn, openNavMenu, openTestDatabase, resetData, today } from "./helpers";
 
 /** The width and height of a PNG image, read from its header. */
 async function pngSize(response: APIResponse): Promise<[number, number]> {
@@ -70,7 +70,8 @@ test.describe("Download backup", () => {
     db.$client.close();
     await logIn(page);
     const download = page.waitForEvent("download");
-    await page.getByRole("contentinfo").getByRole("link", { name: "Download backup" }).click();
+    await openNavMenu(page);
+    await page.getByRole("menuitem", { name: "Download backup" }).click();
     const file = await download;
     expect(file.suggestedFilename()).toBe(`tracker-${today()}.sqlite`);
     const path = info.outputPath("backup.sqlite");

@@ -3,7 +3,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { addVisit } from "@/db/queries";
 import { addTripForTest } from "../unit/trip-helpers";
-import { daysFromToday, logIn, openTestDatabase, resetData } from "./helpers";
+import { daysFromToday, expectCurrentPage, logIn, openTestDatabase, resetData } from "./helpers";
 import { expectCentersLineUp } from "./layout-helpers";
 
 /** Save a visit straight into the test database; returns its id. */
@@ -68,10 +68,7 @@ test.describe("the states list", () => {
 
   test("the states list is the current page in the nav", async ({ page }) => {
     await page.goto("/states");
-    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "States" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    await expectCurrentPage(page, "States");
   });
 });
 
