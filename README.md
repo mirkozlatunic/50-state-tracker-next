@@ -68,6 +68,13 @@ visits and trips.
    (or from before accounts) have no owner yet (`user_id` is empty) and show
    up for nobody until they're given to someone.
 
+## Logo and icons
+
+The logo is the rope-ring badge, kept unchanged in `docs/brand/logo-source.png`.
+`sh scripts/make-icons.sh` makes `public/logo.png` (the badge cropped to a square,
+shown cut to a circle) and the browser and home-screen icons in `public/icons/`
+from it, with macOS's built-in `sips`. Run it again if the source ever changes.
+
 ## iPhone home screen
 
 Open the live address in Safari, sign in, then Share → Add to Home Screen. It

@@ -21,6 +21,15 @@ test.describe("signed out", () => {
     await expect(page.getByRole("button", { name: /Google/ })).toBeVisible();
   });
 
+  test("the sign-in and sign-up pages show the badge logo", async ({ page }) => {
+    for (const path of ["/sign-in", "/sign-up"]) {
+      await page.goto(path);
+      const logo = page.getByRole("img", { name: "50 States Tracker" });
+      await expect(logo, path).toBeVisible();
+      await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0), { message: path }).toBe(true);
+    }
+  });
+
   test("there's a sign-up page for new people", async ({ page }) => {
     await page.goto("/sign-up");
     await expect(page).toHaveTitle("Sign up · 50 States Tracker");

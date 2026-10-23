@@ -4,8 +4,9 @@
 // Pages: Clerk's sign-in and sign-up (with their steps underneath, like
 // /sign-in/factor-one), and the old /login, which sends you on to /sign-in.
 const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/login"];
-// What the browser and the home screen icon need, even signed out.
-const PUBLIC_FILES = ["/manifest.webmanifest", "/favicon.ico"];
+// What the browser and the home screen icon need, even signed out, and the
+// badge logo (shown on the sign-in page; next/image fetches it without a login).
+const PUBLIC_FILES = ["/manifest.webmanifest", "/favicon.ico", "/logo.png"];
 const PUBLIC_FOLDERS = ["/icons/"];
 
 /** True when `pathname` opens without signing in. */
