@@ -1,21 +1,48 @@
 // Shared settings and steps for the browser tests.
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { clerk } from "@clerk/testing/playwright";
 import { expect, type Page } from "@playwright/test";
 import { openDatabase, setupDatabase } from "@/db";
 
-// The test app's own password and database. Made up for the tests only:
-// the real password and data are never used here.
-export const TEST_PASSWORD = "e2e test password";
-export const TEST_SESSION_SECRET = "e2e-only-session-secret-0123456789abcdef";
+// The test app's own database. Made up for the tests only: the real data is never used here.
 export const TEST_DB_URL = `file:${join(tmpdir(), "50-state-tracker-e2e.sqlite")}`;
 
-/** Log in through the login page, the way you would. */
-export async function logIn(page: Page, next = "/") {
-  await page.goto(`/login?next=${encodeURIComponent(next)}`);
-  await page.getByLabel("Password").fill(TEST_PASSWORD);
-  await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page).not.toHaveURL(/\/login/);
+// Two made-up Clerk test people. "+clerk_test" addresses never get real email;
+// in Clerk's development app their sign-in code is always 424242.
+// global-setup.ts makes sure both exist and saves their Clerk ids.
+export const USER_A_EMAIL = "tracker-a+clerk_test@example.com";
+export const USER_B_EMAIL = "tracker-b+clerk_test@example.com";
+
+/** The Clerk id of test person A (the one most tests sign in as) or B. */
+export function userId(person: "A" | "B" = "A"): string {
+  const id = process.env[`E2E_USER_${person}_ID`];
+  if (!id) throw new Error(`E2E_USER_${person}_ID isn't set: global-setup.ts didn't run`);
+  return id;
+}
+
+/** Sign in as test person A (or another address) and open `next`.
+ * clerk.signIn skips the email code (a testing shortcut); one test in
+ * accounts.spec.ts signs in through the real form instead. */
+export async function logIn(page: Page, next = "/", email = USER_A_EMAIL) {
+  await page.goto("/sign-in"); // Clerk needs a page that loads it first
+  await clerk.signIn({ page, emailAddress: email });
+  // Just after signing in, Clerk sometimes moves the browser to another page by
+  // itself, which can cut off the page that's opening; then open it again.
+  // ("/" itself forwards to /states, so this only checks it isn't /sign-in.)
+  await expect(async () => {
+    await page.goto(next);
+    await expect(page).not.toHaveURL(/\/sign-in/, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+}
+
+/** Open `path` and make sure the browser stays on it (see logIn: Clerk's late
+ * move can also cut off the page opened right after the first one). */
+export async function goTo(page: Page, path: string) {
+  await expect(async () => {
+    await page.goto(path);
+    await expect(page).toHaveURL((url) => url.pathname + url.search === path, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
 }
 
 /** Open the header's menu: "Account" on a computer, "Menu" on a phone (where it holds the pages too). */
@@ -46,7 +73,7 @@ export async function openTestDatabase() {
   return db;
 }
 
-/** Remove all visits and trips, so each test starts from an empty tracker. */
+/** Remove everyone's visits and trips, so each test starts from an empty tracker. */
 export async function resetData() {
   const db = await openTestDatabase();
   await db.$client.batch(["DELETE FROM trip_cities", "DELETE FROM trip_states", "DELETE FROM trips", "DELETE FROM visits"], "write");

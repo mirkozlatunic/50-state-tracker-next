@@ -4,12 +4,13 @@ import type { Database } from "@/db";
 import { states, tripCities, trips, tripStates } from "@/db/schema";
 import type { TripCity } from "@/lib/rules";
 
-/** Save a trip with its states and cities; returns its id. */
+/** Save a trip for the person `userId`, with its states and cities; returns its id. */
 export async function addTripForTest(
   db: Database,
+  userId: string,
   trip: { name: string; startDate: string; endDate: string; states: string[]; cities?: TripCity[] },
 ): Promise<number> {
-  const [{ id }] = await db.insert(trips).values({ name: trip.name, startDate: trip.startDate, endDate: trip.endDate }).returning();
+  const [{ id }] = await db.insert(trips).values({ name: trip.name, startDate: trip.startDate, endDate: trip.endDate, userId }).returning();
   const rows = await db.select().from(states).where(inArray(states.code, trip.states));
   await db.insert(tripStates).values(rows.map((state) => ({ tripId: id, stateId: state.id })));
   for (const city of trip.cities ?? []) {

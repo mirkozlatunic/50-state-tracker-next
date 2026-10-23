@@ -43,12 +43,62 @@ describe("setting up the database", () => {
     expect(await db.$count(visits)).toBe(1);
   });
 
-  test("the tables have the same columns as the Flask app, so its backup imports as is", async () => {
+  test("the tables have the Flask app's columns, plus whose each visit and trip is", async () => {
     expect(await columns("states")).toEqual(["id", "code", "name"]);
-    expect(await columns("visits")).toEqual(["id", "state_id", "visit_date", "note", "city"]);
-    expect(await columns("trips")).toEqual(["id", "name", "start_date", "end_date"]);
+    expect(await columns("visits")).toEqual(["id", "state_id", "visit_date", "note", "city", "user_id"]);
+    expect(await columns("trips")).toEqual(["id", "name", "start_date", "end_date", "user_id"]);
     expect(await columns("trip_states")).toEqual(["trip_id", "state_id"]);
     expect(await columns("trip_cities")).toEqual(["trip_id", "state_id", "city"]);
+  });
+});
+
+describe("an older database without people (slice 13)", () => {
+  // The tables as they were before accounts: no user_id column, one visit and one trip in them.
+  const OLD_TABLES = `
+    CREATE TABLE states (id INTEGER PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT UNIQUE NOT NULL);
+    CREATE TABLE visits (id INTEGER PRIMARY KEY, state_id INTEGER NOT NULL REFERENCES states(id),
+      visit_date TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', city TEXT);
+    CREATE TABLE trips (id INTEGER PRIMARY KEY, name TEXT NOT NULL, start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL, CHECK (end_date >= start_date));
+    INSERT INTO states (id, code, name) VALUES (6, 'CO', 'Colorado');
+    INSERT INTO visits (state_id, visit_date, note) VALUES (6, '2024-07-04', 'Red Rocks');
+    INSERT INTO trips (name, start_date, end_date) VALUES ('Ski', '2027-01-10', '2027-01-12');`;
+
+  /** A fresh database file holding the old tables. */
+  async function oldDatabase() {
+    const old = openDatabase({ url: `file:${join(folder, "old.sqlite")}` });
+    await old.$client.executeMultiple(OLD_TABLES);
+    return old;
+  }
+
+  test("setting it up adds the user_id column and keeps every row", async () => {
+    const old = await oldDatabase();
+    await setupDatabase(old);
+    const oldColumns = async (table: string) =>
+      (await old.$client.execute(`PRAGMA table_info(${table})`)).rows.map((row) => row.name);
+    expect(await oldColumns("visits")).toContain("user_id");
+    expect(await oldColumns("trips")).toContain("user_id");
+    // The old rows belong to nobody yet (""), until they're given to someone.
+    expect((await old.$client.execute("SELECT note, user_id FROM visits")).rows.map((row) => ({ ...row }))).toEqual([
+      { note: "Red Rocks", user_id: "" },
+    ]);
+    expect((await old.$client.execute("SELECT name, user_id FROM trips")).rows.map((row) => ({ ...row }))).toEqual([
+      { name: "Ski", user_id: "" },
+    ]);
+    old.$client.close();
+  });
+
+  test("setting it up twice is fine", async () => {
+    const old = await oldDatabase();
+    await setupDatabase(old);
+    await setupDatabase(old);
+    expect(await old.$count(visits)).toBe(1);
+    old.$client.close();
+  });
+
+  test("there's no wrong-password table any more (Clerk handles logging in)", async () => {
+    const tables = (await db.$client.execute("SELECT name FROM sqlite_master WHERE type = 'table'")).rows.map((row) => row.name);
+    expect(tables).not.toContain("login_failures");
   });
 });
 

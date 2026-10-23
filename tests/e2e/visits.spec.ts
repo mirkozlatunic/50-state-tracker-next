@@ -3,13 +3,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { addVisit } from "@/db/queries";
 import { addTripForTest } from "../unit/trip-helpers";
-import { daysFromToday, expectCurrentPage, logIn, openTestDatabase, resetData } from "./helpers";
+import { daysFromToday, expectCurrentPage, logIn, openTestDatabase, resetData, userId } from "./helpers";
 import { expectCentersLineUp } from "./layout-helpers";
 
 /** Save a visit straight into the test database; returns its id. */
 async function saveVisit(state: string, visitDate: string, note = "", city: string | null = null) {
   const db = await openTestDatabase();
-  const id = await addVisit(db, { state, visitDate, note, city });
+  const id = await addVisit(db, userId(), { state, visitDate, note, city });
   db.$client.close();
   return id;
 }
@@ -114,14 +114,14 @@ test.describe("a state's page", () => {
 
   test("shows upcoming trips that include it, with only this state's cities", async ({ page }) => {
     const db = await openTestDatabase();
-    await addTripForTest(db, {
+    await addTripForTest(db, userId(), {
       name: "Four Corners weekend",
       startDate: daysFromToday(7),
       endDate: daysFromToday(9),
       states: ["UT", "AZ"],
       cities: [{ name: "Moab", state: "UT" }, { name: "Page", state: "AZ" }],
     });
-    await addTripForTest(db, { name: "Ended trip", startDate: "2025-06-01", endDate: "2025-06-03", states: ["UT"] });
+    await addTripForTest(db, userId(), { name: "Ended trip", startDate: "2025-06-01", endDate: "2025-06-03", states: ["UT"] });
     db.$client.close();
     await page.goto("/states/UT");
     const trips = page.getByRole("list", { name: "Planned trips" });
@@ -151,13 +151,13 @@ test.describe("adding a visit", () => {
     await expect(page.getByRole("combobox", { name: "State" })).toHaveText(/California/);
   });
 
-  test("a form sent after the login ran out saves nothing and asks for the password", async ({ page, context }) => {
+  test("a form sent after signing out elsewhere saves nothing and asks you to sign in", async ({ page, context }) => {
     await page.goto("/visits/new?state=CA");
     await page.getByLabel("Visit date").fill("2024-07-04");
     await page.getByLabel("Note").fill("should not be saved");
-    await context.clearCookies(); // as if the 30 days ran out while the form was open
+    await context.clearCookies(); // as if this device was signed out while the form was open
     await page.getByRole("button", { name: "Save visit" }).click();
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page).toHaveURL(/\/sign-in/);
     await logIn(page, "/states/CA");
     await expect(page.getByText("No visits yet.")).toBeVisible();
   });

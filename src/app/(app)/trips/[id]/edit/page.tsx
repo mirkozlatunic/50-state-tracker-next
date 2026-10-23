@@ -6,6 +6,7 @@ import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { TripForm } from "@/components/trip-form";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { getTrip } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { startDateLimits } from "@/lib/trip-form";
@@ -27,8 +28,9 @@ export default function EditTripPage({ params, searchParams }: PageProps<"/trips
 /** The form, once the trip is loaded; an unknown trip shows "Not found". */
 async function EditTrip({ params, searchParams }: Pick<PageProps<"/trips/[id]/edit">, "params" | "searchParams">) {
   await connection();
+  const userId = await requireUserId(); // only this person's visits and trips
   const id = Number((await params).id);
-  const trip = Number.isInteger(id) ? await getTrip(await appDatabase(), id) : null;
+  const trip = Number.isInteger(id) ? await getTrip(await appDatabase(), userId, id) : null;
   if (!trip) notFound();
   const { min } = startDateLimits({ today: todayIn(), keepStart: trip.startDate });
   return (

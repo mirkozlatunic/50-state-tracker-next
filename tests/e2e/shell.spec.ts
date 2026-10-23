@@ -3,7 +3,7 @@
 // Slice 11: the header is a fixed pill that stays on screen while scrolling,
 // and Download backup and Log out moved from the footer into its menu.
 import { expect, test, type Page } from "@playwright/test";
-import { expectCurrentPage, logIn, openNavMenu, TEST_DB_URL } from "./helpers";
+import { expectCurrentPage, logIn, openNavMenu, TEST_DB_URL, userId } from "./helpers";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
 import { openDatabase, setupDatabase } from "@/db";
 import { visitedStateCount } from "@/db/queries";
@@ -39,10 +39,10 @@ test.describe("the header", () => {
     for (const [name, href] of NAV) await expect(nav(page).getByRole("link", { name })).toHaveAttribute("href", href);
   });
 
-  test("on a phone, the menu lists every part of the app, then backup and log out", async ({ page }, info) => {
+  test("on a phone, the menu lists every part of the app, then backup, account and log out", async ({ page }, info) => {
     test.skip(!isPhone(info.project.name), "phone layout");
     await openNavMenu(page);
-    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Download backup", "Log out"]);
+    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Download backup", "Manage account", "Log out"]);
     await page.getByRole("menuitem", { name: "Trips" }).click();
     await expect(page).toHaveURL("/trips");
     await expectCurrentPage(page, "Trips");
@@ -51,7 +51,7 @@ test.describe("the header", () => {
   test("the counter shows the visited states from the database", async ({ page }) => {
     const db = openDatabase({ url: TEST_DB_URL });
     await setupDatabase(db);
-    const count = await visitedStateCount(db);
+    const count = await visitedStateCount(db, userId());
     db.$client.close();
     await expect(counter(page)).toHaveText(`${count} of 50`);
   });
@@ -66,9 +66,10 @@ test.describe("the header", () => {
 });
 
 test.describe("the menu at the top", () => {
-  test("has Download backup and Log out", async ({ page }) => {
+  test("has Download backup, Manage account and Log out", async ({ page }) => {
     await openNavMenu(page);
     await expect(page.getByRole("menuitem", { name: "Download backup" })).toHaveAttribute("href", "/backup");
+    await expect(page.getByRole("menuitem", { name: "Manage account" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
   });
 
@@ -127,9 +128,9 @@ test.describe("the header stays on screen", () => {
   });
 });
 
-test("logged out, the login page shows no header nav, counter or menu", async ({ browser }) => {
+test("signed out, the sign-in page shows no header nav, counter or menu", async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
-  await page.goto("/login");
+  await page.goto("/sign-in");
   await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
   await expect(page.getByText(/^\d+ of 50$/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^(Account|Menu)$/ })).toHaveCount(0);
