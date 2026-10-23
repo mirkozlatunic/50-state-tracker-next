@@ -33,6 +33,12 @@ async function seed({
   db.$client.close();
 }
 
+// The light theme's map colors (globals.css): sage, gold and the pale "not yet".
+const SAGE = "rgb(143, 162, 139)";
+const GOLD = "rgb(241, 184, 74)";
+const PALE = "rgb(231, 235, 230)";
+const NAVY = "rgb(22, 54, 75)";
+
 // A "figure" (not an "img"): links inside an image are hidden from screen readers.
 const map = (page: Page) => page.getByRole("figure", { name: "Map of the 50 states" });
 const stateShape = (page: Page, code: string) => page.locator(`[data-state="${code}"]`);
@@ -59,7 +65,7 @@ test.describe("on a computer: the map", () => {
     );
   });
 
-  test("colors: green visited, orange in a trip that hasn't ended, grey otherwise; visited wins", async ({ page }) => {
+  test("colors: sage visited, gold in a trip that hasn't ended, pale otherwise; visited wins", async ({ page }) => {
     await seed({
       visits: [{ state: "CA" }, { state: "AZ" }],
       trips: [
@@ -76,7 +82,42 @@ test.describe("on a computer: the map", () => {
     expect(await status("TX")).toBe("planned");
     expect(await status("OR")).toBe("unvisited");
     const fill = (code: string) => stateShape(page, code).evaluate((shape) => getComputedStyle(shape).fill);
-    expect(new Set([await fill("CA"), await fill("UT"), await fill("OR")]).size).toBe(3);
+    expect(await fill("CA")).toBe(SAGE);
+    expect(await fill("UT")).toBe(GOLD);
+    expect(await fill("OR")).toBe(PALE);
+  });
+
+  test("states in an upcoming trip are also striped, so they don't rely on color alone", async ({ page }) => {
+    await seed({
+      visits: [{ state: "AZ" }],
+      trips: [{ name: "Weekend", start: daysFromToday(7), end: daysFromToday(9), states: ["AZ", "UT", "NV"] }],
+    });
+    await page.goto("/map");
+    // AZ is visited (visited wins), so only UT and NV get stripes.
+    const stripes = page.locator("[data-stripes]");
+    await expect(stripes).toHaveCount(2);
+    expect((await stripes.evaluateAll((shapes) => shapes.map((shape) => shape.getAttribute("data-stripes")))).sort()).toEqual([
+      "NV",
+      "UT",
+    ]);
+    // Drawn on top with a striped pattern, and they don't block clicks on the state.
+    const style = await stripes.first().evaluate((shape) => getComputedStyle(shape));
+    expect(style.fill).toContain("url(");
+    expect(style.pointerEvents).toBe("none");
+    await expect(page.getByRole("list", { name: "Legend" }).locator("[data-stripes-swatch]")).toHaveCount(1);
+  });
+
+  test("the dark theme uses its own sage and map colors", async ({ browser }) => {
+    const page = await (await browser.newContext({ colorScheme: "dark" })).newPage();
+    await seed({
+      visits: [{ state: "CA" }],
+      trips: [{ name: "Weekend", start: daysFromToday(7), end: daysFromToday(9), states: ["UT"] }],
+    });
+    await logIn(page, "/map");
+    const fill = (code: string) => stateShape(page, code).evaluate((shape) => getComputedStyle(shape).fill);
+    expect(await fill("CA")).toBe("rgb(154, 175, 152)");
+    expect(await fill("UT")).toBe(GOLD);
+    expect(await fill("OR")).toBe("rgb(42, 59, 69)");
   });
 
   test("the year filter counts only trips that start in that year", async ({ page }) => {
@@ -126,7 +167,7 @@ test.describe("on a computer: city dots", () => {
     await expect(page.locator("[data-kind]")).toHaveCount(0);
   });
 
-  test("a visited city is dark green, a city in an upcoming trip is blue, and one that's both is blue", async ({ page }) => {
+  test("a visited city is a solid dot, a city in an upcoming trip a gold ring, and one that's both a gold ring", async ({ page }) => {
     await seed({
       visits: [{ state: "CO", city: "Denver" }, { state: "CO", city: "Boulder" }],
       trips: [{ name: "Four Corners weekend", start: daysFromToday(7), end: daysFromToday(9), states: ["CO", "NM"], cities: [["Denver", "CO"], ["Santa Fe", "NM"]] }],
@@ -135,6 +176,18 @@ test.describe("on a computer: city dots", () => {
     await expect(dotButton(page, "Boulder, CO")).toHaveAttribute("data-kind", "visited");
     await expect(dotButton(page, "Santa Fe, NM")).toHaveAttribute("data-kind", "upcoming");
     await expect(dotButton(page, "Denver, CO")).toHaveAttribute("data-kind", "upcoming");
+    // Solid navy vs. hollow with a gold ring: they differ in shape, not only color.
+    const look = (label: string) =>
+      dotButton(page, label).evaluate((dot) => {
+        const style = getComputedStyle(dot);
+        return { background: style.backgroundColor, ring: style.boxShadow };
+      });
+    const visited = await look("Boulder, CO");
+    const upcoming = await look("Santa Fe, NM");
+    expect(visited.background).toBe(NAVY);
+    expect(upcoming.background).not.toBe(GOLD);
+    expect(upcoming.background).not.toBe(NAVY);
+    expect(upcoming.ring).toContain(GOLD);
   });
 
   test("two visits to a city give one dot; a trip that ended gives none", async ({ page }) => {
@@ -233,6 +286,21 @@ test.describe("on a phone: the next trip and the region cards", () => {
     await expect(colorado).toHaveAttribute("data-status", "visited");
     await expect(colorado).toContainText("2");
     await expect(regionCard(page, "West").getByRole("link", { name: /^Oregon/ })).toHaveAttribute("data-status", "planned");
+  });
+
+  test("a chip's status doesn't rely on color alone: words for screen readers, a mark you can see", async ({ page }) => {
+    await seed({
+      visits: [{ state: "CO" }],
+      trips: [{ name: "Weekend", start: daysFromToday(7), end: daysFromToday(9), states: ["OR"] }],
+    });
+    await page.goto("/map");
+    const west = regionCard(page, "West");
+    await expect(west.getByRole("link", { name: "Colorado, visited" })).toBeVisible();
+    await expect(west.getByRole("link", { name: "Oregon, planned" })).toBeVisible();
+    await expect(west.getByRole("link", { name: "Utah", exact: true })).toBeVisible();
+    // Visited chips show a check mark; planned chips are striped like the map.
+    await expect(west.getByRole("link", { name: "Colorado, visited" }).locator("svg")).toHaveCount(1);
+    await expect(west.getByRole("link", { name: "Oregon, planned" })).toHaveAttribute("data-stripes-swatch", "");
   });
 
   test("the chips are big enough to tap", async ({ page }) => {

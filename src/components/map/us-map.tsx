@@ -1,5 +1,6 @@
 // The US map: each state is a shape (an SVG <path>) colored by its status and
-// linking to its state page, with the city dots on top. The dots are buttons
+// linking to its state page (states in an upcoming trip are also striped),
+// with the city dots on top. The dots are buttons
 // laid over the drawing, placed as a share of its width and height.
 
 import { CityDot } from "@/components/map/city-dot";
@@ -7,6 +8,9 @@ import { MAP_HEIGHT, MAP_WIDTH, STATE_PATHS } from "@/lib/data/map";
 import { STATES, STATE_NAMES } from "@/lib/data/states";
 import { dotDetails, dotPosition } from "@/lib/map-view";
 import type { CityDot as Dot, StateStatus } from "@/lib/progress";
+
+// The striped pattern's id (an SVG pattern is used by its id).
+const STRIPES_ID = "planned-stripes";
 
 const FILL: Record<StateStatus, string> = {
   visited: "fill-visited",
@@ -18,6 +22,12 @@ export function UsMap({ statuses, dots }: { statuses: Record<string, StateStatus
   return (
     <figure aria-label="Map of the 50 states" className="relative aspect-959/593 w-full">
       <svg viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} className="absolute inset-0 size-full">
+        <defs>
+          {/* Thin navy diagonal stripes, laid over states in an upcoming trip. */}
+          <pattern id={STRIPES_ID} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="2" height="7" className="fill-planned-foreground opacity-30" />
+          </pattern>
+        </defs>
         {STATES.map(([code, name]) => (
           // An SVG link (<a> inside <svg>); next/link can't draw inside a drawing.
           <a key={code} href={`/states/${code}`} aria-label={name}>
@@ -31,6 +41,13 @@ export function UsMap({ statuses, dots }: { statuses: Record<string, StateStatus
             </path>
           </a>
         ))}
+        {/* The stripes go on top of the planned states, so planned doesn't rely
+            on the gold color alone. Clicks go through them to the state below. */}
+        <g aria-hidden className="pointer-events-none">
+          {STATES.filter(([code]) => statuses[code] === "planned").map(([code]) => (
+            <path key={code} d={STATE_PATHS[code]} data-stripes={code} fill={`url(#${STRIPES_ID})`} className="pointer-events-none" />
+          ))}
+        </g>
       </svg>
       {dots.map((dot) => (
         <CityDot
