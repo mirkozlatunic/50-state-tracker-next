@@ -111,6 +111,9 @@ No other packages without asking me first.
   sign-in, sign-up, the styles, icons and manifest. The old /login goes to /sign-in.
 - Every page and form action checks who's signed in itself (requireUserId),
   not only proxy.ts.
+- The home page (`/`) shows the heading, a "Start tracking" button, my map
+  (states only, no city dots) and my numbers: 50 states, visited, remaining.
+- Future ideas are in `docs/roadmap.md`. Don't build any of them without being asked.
 - On phones (640px wide or less), `/map` shows the next trip and the four
   Census regions as cards instead of the map. Bigger screens keep the map.
 - In every row of buttons, the buttons' vertical centers line up within 1px.

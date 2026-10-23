@@ -44,9 +44,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("the states list", () => {
-  test("the home page opens the states list", async ({ page }) => {
-    await page.goto("/");
-    await expect(page).toHaveURL("/states");
+  test("the states list has its own address and title", async ({ page }) => {
+    await page.goto("/states");
     await expect(page).toHaveTitle("States · 50 States Tracker");
   });
 
