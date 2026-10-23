@@ -77,6 +77,20 @@ test.describe("the menu at the top", () => {
   });
 });
 
+/** Open the states list and scroll down until the header shrinks. On a slow
+ * machine the first scroll can come before the page is ready to notice it, so
+ * it starts again from the top until it works. */
+async function scrollDownUntilShrunk(page: Page) {
+  await page.goto("/states");
+  await expect(page.getByRole("link", { name: "Wyoming" })).toBeVisible(); // the list has loaded
+  await expect(async () => {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.mouse.wheel(0, 1500);
+    await expect(header(page).getByRole("button", { name: "Show navigation" })).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+}
+
 test.describe("the header stays on screen", () => {
   // A short window, so every page has room to scroll.
   test.beforeEach(async ({ page }) => {
@@ -91,9 +105,7 @@ test.describe("the header stays on screen", () => {
   });
 
   test("after scrolling down it's still at the top, and a tap opens it again", async ({ page }, info) => {
-    await page.goto("/states");
-    await page.mouse.wheel(0, 1500);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+    await scrollDownUntilShrunk(page);
     // Scrolled down, it shrinks to a round button that's still on screen.
     const collapsed = header(page).getByRole("button", { name: "Show navigation" });
     await expect(collapsed).toBeInViewport();
@@ -108,9 +120,7 @@ test.describe("the header stays on screen", () => {
   });
 
   test("scrolling back up opens it again by itself", async ({ page }) => {
-    await page.goto("/states");
-    await page.mouse.wheel(0, 1500);
-    await expect(header(page).getByRole("button", { name: "Show navigation" })).toBeVisible();
+    await scrollDownUntilShrunk(page);
     await page.mouse.wheel(0, -400);
     await expect(header(page).getByRole("button", { name: "Show navigation" })).toHaveCount(0);
     await expect(menuButton(page)).toBeInViewport();
