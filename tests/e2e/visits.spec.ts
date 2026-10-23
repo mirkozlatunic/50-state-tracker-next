@@ -151,15 +151,28 @@ test.describe("adding a visit", () => {
     await expect(page.getByRole("combobox", { name: "State" })).toHaveText(/California/);
   });
 
-  test("a form sent after signing out elsewhere saves nothing and asks you to sign in", async ({ page, context }) => {
+  test("a form sent after signing out elsewhere saves nothing and asks you to sign in", async ({ page, context, browser }) => {
     await page.goto("/visits/new?state=CA");
     await page.getByLabel("Visit date").fill("2024-07-04");
     await page.getByLabel("Note").fill("should not be saved");
-    await context.clearCookies(); // as if this device was signed out while the form was open
+    // As if this device was signed out while the form was open. Deleting the
+    // cookies alone isn't enough: Clerk's script on the open page still knows
+    // the session and quietly puts the cookie back. So also forget what the
+    // page stored and stop it from reaching Clerk.
+    await context.clearCookies();
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.route(/clerk\.accounts\.dev/, (route) => route.abort());
     await page.getByRole("button", { name: "Save visit" }).click();
     await expect(page).toHaveURL(/\/sign-in/);
-    await logIn(page, "/states/CA");
-    await expect(page.getByText("No visits yet.")).toBeVisible();
+    // Check in a fresh browser window: Clerk's development app also remembers
+    // the session outside the cookies, so signing in again in this one can be
+    // refused with "You're already signed in".
+    const fresh = await (await browser.newContext()).newPage();
+    await logIn(fresh, "/states/CA");
+    await expect(fresh.getByText("No visits yet.")).toBeVisible();
   });
 
   test("an unknown state in the link falls back to the placeholder", async ({ page }) => {
