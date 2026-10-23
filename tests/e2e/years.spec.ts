@@ -3,7 +3,7 @@
 // dragging (with a mouse, and with a finger on the iPhone).
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { addTrip, addVisit } from "@/db/queries";
-import { expectCurrentPage, logIn, openTestDatabase, resetData, today } from "./helpers";
+import { expectCurrentPage, logIn, openTestDatabase, resetData, today, userId } from "./helpers";
 import { expectCentersLineUp } from "./layout-helpers";
 
 const THIS_YEAR = Number(today().slice(0, 4));
@@ -12,7 +12,7 @@ const NEXT_YEAR = THIS_YEAR + 1;
 /** Save a trip straight into the test database; returns its id. */
 async function saveTrip(name: string, start: string, end: string, states: string[] = ["VT"]) {
   const db = await openTestDatabase();
-  const id = await addTrip(db, { name, startDate: start, endDate: end, states, cities: [] });
+  const id = await addTrip(db, userId(), { name, startDate: start, endDate: end, states, cities: [] });
   db.$client.close();
   return id;
 }
@@ -84,7 +84,7 @@ test.describe("the years page", () => {
 
   test("shows the new states and the running total for each year", async ({ page }) => {
     const db = await openTestDatabase();
-    await addVisit(db, { state: "CO", visitDate: "2024-07-04", note: "", city: null });
+    await addVisit(db, userId(), { state: "CO", visitDate: "2024-07-04", note: "", city: null });
     db.$client.close();
     await saveTrip("Four Corners", `${NEXT_YEAR}-03-01`, `${NEXT_YEAR}-03-03`, ["CO", "NM"]);
     await page.goto("/years");

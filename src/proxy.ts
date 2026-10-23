@@ -1,38 +1,31 @@
-// Runs before every page (Next.js "proxy", formerly "middleware"): logged out,
-// pages go to /login; without a password set, they explain how to set one.
-// Each form action also checks the login itself (see requireLogin).
+// Runs before every page (Next.js "proxy", formerly "middleware"). Clerk's
+// clerkMiddleware reads the sign-in cookie; signed out, every page except the
+// public ones (src/lib/auth/public-routes.ts) goes to the sign-in page.
+// Each page and form action also checks who's signed in itself (requireUserId).
 
-import { NextResponse, type NextRequest } from "next/server";
-import { unsealData } from "iron-session";
-import { decideAccess } from "@/lib/auth/access";
+import { NextResponse } from "next/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
+import { isPublicPath } from "@/lib/auth/public-routes";
 import { checkStatePath } from "@/lib/routes";
-import { COOKIE_NAME, sessionOptions, type SessionData } from "@/lib/auth/session";
-import { isSetUp, secureCookies, sessionSecret } from "@/lib/settings";
 
-export async function proxy(request: NextRequest) {
-  const setUp = isSetUp();
-  let loggedIn = false;
-  const cookie = request.cookies.get(COOKIE_NAME)?.value;
-  if (setUp && cookie) {
-    const { password, ttl } = sessionOptions({ secret: sessionSecret(), secure: secureCookies() });
-    // unsealData gives back {} for a cookie that's fake, damaged or too old.
-    const data = await unsealData<SessionData>(cookie, { password, ttl });
-    loggedIn = data.loggedIn === true;
-  }
+export default clerkMiddleware(
+  async (auth, request) => {
+    const { pathname } = request.nextUrl;
+    // Form actions are sent with a "Next-Action" header naming the action. Each
+    // one checks who's signed in itself (requireUserId), and its trip to
+    // /sign-in is one the form understands; a redirect from here isn't.
+    const serverAction = request.method === "POST" && request.headers.has("next-action");
+    // auth.protect() sends a signed-out visitor to /sign-in, remembering this page.
+    if (!isPublicPath(pathname) && !serverAction) await auth.protect();
 
-  const { pathname, search } = request.nextUrl;
-  // Form actions are sent with a "Next-Action" header naming the action.
-  const serverAction = request.method === "POST" && request.headers.has("next-action");
-  const access = decideAccess({ pathname, search, loggedIn, setUp, serverAction });
-  if (access.kind === "redirect") return NextResponse.redirect(new URL(access.to, request.url));
-  if (access.kind === "setup") return NextResponse.rewrite(new URL("/setup", request.url), { status: 503 });
-
-  const path = checkStatePath(pathname);
-  if (path.kind === "redirect") return NextResponse.redirect(new URL(path.to, request.url));
-  // An address no page answers: Next.js shows the not-found page with a 404.
-  if (path.kind === "not-found") return NextResponse.rewrite(new URL("/not-found", request.url));
-  return NextResponse.next();
-}
+    const path = checkStatePath(pathname);
+    if (path.kind === "redirect") return NextResponse.redirect(new URL(path.to, request.url));
+    // An address no page answers: Next.js shows the not-found page with a 404.
+    if (path.kind === "not-found") return NextResponse.rewrite(new URL("/not-found", request.url));
+    return NextResponse.next();
+  },
+  { signInUrl: "/sign-in", signUpUrl: "/sign-up" },
+);
 
 export const config = {
   // Everything except Next.js's own build files (scripts, styles, images).

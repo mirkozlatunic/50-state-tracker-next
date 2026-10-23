@@ -3,7 +3,7 @@
 // (the same checks as the Flask app's map, city dot and region tests).
 import { expect, test, type Page } from "@playwright/test";
 import { addTrip, addVisit } from "@/db/queries";
-import { daysFromToday, logIn, openTestDatabase, resetData, today } from "./helpers";
+import { daysFromToday, logIn, openTestDatabase, resetData, today, userId } from "./helpers";
 import { expectAtLeastTall } from "./layout-helpers";
 
 const THIS_YEAR = Number(today().slice(0, 4));
@@ -19,10 +19,10 @@ async function seed({
 }) {
   const db = await openTestDatabase();
   for (const visit of visits) {
-    await addVisit(db, { state: visit.state, visitDate: visit.date ?? "2024-07-04", note: "", city: visit.city ?? null });
+    await addVisit(db, userId(), { state: visit.state, visitDate: visit.date ?? "2024-07-04", note: "", city: visit.city ?? null });
   }
   for (const trip of trips) {
-    await addTrip(db, {
+    await addTrip(db, userId(), {
       name: trip.name,
       startDate: trip.start,
       endDate: trip.end,

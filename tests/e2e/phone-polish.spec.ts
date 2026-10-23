@@ -1,7 +1,7 @@
 // Slice 10: phone polish — searching the states list, two columns on phones,
 // date fields lined up with the other fields (also in Safari's engine).
 import { devices, expect, test, webkit, type Page } from "@playwright/test";
-import { logIn, resetData } from "./helpers";
+import { goTo, logIn, resetData } from "./helpers";
 
 const search = (page: Page) => page.getByRole("searchbox", { name: "Search states" });
 const stateLinks = (page: Page) => page.getByRole("main").getByRole("list").getByRole("link");
@@ -110,7 +110,7 @@ test.describe("date fields line up with the other fields", () => {
       const date = (await page.getByLabel("Visit date").boundingBox())!;
       const note = (await page.getByLabel("Note").boundingBox())!;
       expect(Math.abs(date.width - note.width)).toBeLessThanOrEqual(0.5);
-      await page.goto("/trips/new");
+      await goTo(page, "/trips/new");
       await expectFieldsFullWidth(page);
     } finally {
       await browser.close();

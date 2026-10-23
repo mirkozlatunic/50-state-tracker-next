@@ -1,11 +1,11 @@
 "use client";
 // The menu at the right end of the header. On a computer ("Account") it holds
-// Download backup and Log out. On a phone ("Menu") it lists the pages too,
-// because the page links don't fit in the header there.
+// Download backup, Manage account and Log out. On a phone ("Menu") it lists
+// the pages too, because the page links don't fit in the header there.
 
 import Link from "next/link";
-import { CircleUser, Download, LogOut, Menu } from "lucide-react";
-import { logOut } from "@/app/login/actions";
+import { useClerk } from "@clerk/nextjs";
+import { CircleUser, Download, LogOut, Menu, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +24,8 @@ const ITEM = "pointer-coarse:min-h-11";
 /** The header's menu. `phone`: the phone version (shown below 640px), otherwise the computer one.
  * `pathname` (the address you're on) marks the current page in the phone's list. */
 export function NavMenu({ phone = false, pathname = "", className }: { phone?: boolean; pathname?: string; className?: string }) {
+  // useClerk gives the signed-in session's controls: open account settings, sign out.
+  const clerk = useClerk();
   return (
     <DropdownMenu>
       {/* Both versions are on the page; CSS shows the one that fits the screen. */}
@@ -60,8 +62,13 @@ export function NavMenu({ phone = false, pathname = "", className }: { phone?: b
           <Download aria-hidden />
           Download backup
         </DropdownMenuLinkItem>
-        {/* Calls the logOut form action directly; it sends the browser to /login. */}
-        <DropdownMenuItem onClick={() => logOut()} className={ITEM}>
+        {/* Clerk's account settings (email, Google, sessions) in a pop-up. */}
+        <DropdownMenuItem onClick={() => clerk.openUserProfile()} className={ITEM}>
+          <UserCog aria-hidden />
+          Manage account
+        </DropdownMenuItem>
+        {/* Signs this device out, then shows the sign-in page. */}
+        <DropdownMenuItem onClick={() => clerk.signOut({ redirectUrl: "/sign-in" })} className={ITEM}>
           <LogOut aria-hidden />
           Log out
         </DropdownMenuItem>

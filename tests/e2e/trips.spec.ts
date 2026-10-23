@@ -2,7 +2,7 @@
 // (the same checks as the Flask app's trip tests).
 import { expect, test, type Page } from "@playwright/test";
 import { addTrip, addVisit, getTrip } from "@/db/queries";
-import { daysFromToday, expectCurrentPage, logIn, openTestDatabase, resetData, today } from "./helpers";
+import { daysFromToday, expectCurrentPage, logIn, openTestDatabase, resetData, today, userId } from "./helpers";
 import { expectCentersLineUp } from "./layout-helpers";
 
 type NewTrip = { name: string; startDate: string; endDate: string; states: string[]; cities?: { name: string; state: string }[] };
@@ -10,7 +10,7 @@ type NewTrip = { name: string; startDate: string; endDate: string; states: strin
 /** Save a trip straight into the test database; returns its id. */
 async function saveTrip(trip: NewTrip) {
   const db = await openTestDatabase();
-  const id = await addTrip(db, { cities: [], ...trip });
+  const id = await addTrip(db, userId(), { cities: [], ...trip });
   db.$client.close();
   return id;
 }
@@ -18,7 +18,7 @@ async function saveTrip(trip: NewTrip) {
 /** The trip as stored in the test database. */
 async function storedTrip(id: number) {
   const db = await openTestDatabase();
-  const trip = await getTrip(db, id);
+  const trip = await getTrip(db, userId(), id);
   db.$client.close();
   return trip;
 }
@@ -136,7 +136,7 @@ test.describe("planning a trip", () => {
 
   test("a trip to a state you've already visited is fine, and planning doesn't count as visiting", async ({ page }) => {
     const db = await openTestDatabase();
-    await addVisit(db, { state: "CA", visitDate: "2024-07-04", note: "", city: null });
+    await addVisit(db, userId(), { state: "CA", visitDate: "2024-07-04", note: "", city: null });
     db.$client.close();
     await page.goto("/trips/new");
     await fillTrip(page, { name: "Back to California", start: daysFromToday(7), end: daysFromToday(8), states: ["California", "Nevada"] });
@@ -275,7 +275,7 @@ test.describe("deleting a trip", () => {
 
   test("deleting removes the trip from every page, and keeps visits", async ({ page }) => {
     const db = await openTestDatabase();
-    await addVisit(db, { state: "VT", visitDate: "2024-07-04", note: "", city: null });
+    await addVisit(db, userId(), { state: "VT", visitDate: "2024-07-04", note: "", city: null });
     db.$client.close();
     await saveTrip({ name: "Gone soon", startDate: daysFromToday(7), endDate: daysFromToday(8), states: ["VT"] });
     await page.goto("/trips");

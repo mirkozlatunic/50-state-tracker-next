@@ -9,6 +9,7 @@ import { UsMap } from "@/components/map/us-map";
 import { YearFilter } from "@/components/map/year-filter";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { loadTrips, loadVisits } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { readMapYear } from "@/lib/map-view";
@@ -33,9 +34,10 @@ export default function MapPage({ searchParams }: PageProps<"/map">) {
 /** Everything that depends on the data and the address, read fresh on every visit. */
 async function MapContent({ searchParams }: Pick<PageProps<"/map">, "searchParams">) {
   await connection();
+  const userId = await requireUserId(); // only this person's visits and trips
   const year = readMapYear(String((await searchParams).year ?? ""));
   const db = await appDatabase();
-  const data = { visits: await loadVisits(db), trips: await loadTrips(db) };
+  const data = { visits: await loadVisits(db, userId), trips: await loadTrips(db, userId) };
   const today = todayIn();
 
   return (

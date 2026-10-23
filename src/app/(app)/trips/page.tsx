@@ -8,6 +8,7 @@ import { ListSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { buttonVariants } from "@/components/ui/button";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { loadTrips } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { STATE_NAMES } from "@/lib/data/states";
@@ -35,7 +36,8 @@ export default function TripsPage() {
 /** The list itself, read fresh from the database on every visit. */
 async function TripList() {
   await connection();
-  const trips = upcomingTrips(await loadTrips(await appDatabase()), todayIn());
+  const userId = await requireUserId(); // only this person's visits and trips
+  const trips = upcomingTrips(await loadTrips(await appDatabase(), userId), todayIn());
   if (trips.length === 0) return <p className="text-muted-foreground">No trips planned yet.</p>;
 
   return (

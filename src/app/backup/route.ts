@@ -1,22 +1,22 @@
-// GET /backup: download the backup file (logged in only; proxy.ts and
-// requireLogin both check). Made in a temporary folder, sent, then deleted.
+// GET /backup: download my backup file (signed in only; proxy.ts and
+// requireUserId both check). Made in a temporary folder, sent, then deleted.
 
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { connection } from "next/server";
 import { appDatabase } from "@/db/app";
-import { requireLogin } from "@/lib/auth/server";
+import { requireUserId } from "@/lib/auth/server";
 import { backupFileName, writeBackup } from "@/lib/backup";
 import { todayIn } from "@/lib/dates";
 
 export async function GET() {
   await connection(); // a fresh copy on every download, never one made at build time
-  await requireLogin();
+  const userId = await requireUserId();
   const folder = mkdtempSync(join(tmpdir(), "tracker-backup-"));
   try {
     const file = join(folder, "backup.sqlite");
-    await writeBackup(await appDatabase(), file);
+    await writeBackup(await appDatabase(), userId, file);
     return new Response(readFileSync(file), {
       headers: {
         "Content-Type": "application/vnd.sqlite3",

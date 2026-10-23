@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS visits (
     state_id   INTEGER NOT NULL REFERENCES states(id),
     visit_date TEXT NOT NULL,   -- "YYYY-MM-DD"
     note       TEXT NOT NULL DEFAULT '',
-    city       TEXT             -- optional; official spelling from src/lib/data/us_cities.csv
+    city       TEXT,            -- optional; official spelling from src/lib/data/us_cities.csv
+    user_id    TEXT NOT NULL DEFAULT ''  -- whose visit it is (their Clerk id)
 );
 
 CREATE TABLE IF NOT EXISTS trips (
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS trips (
     name       TEXT NOT NULL,
     start_date TEXT NOT NULL,   -- "YYYY-MM-DD"
     end_date   TEXT NOT NULL,   -- "YYYY-MM-DD"
+    user_id    TEXT NOT NULL DEFAULT '',  -- whose trip it is (their Clerk id)
     -- A backstop for the rule; the app checks it first with a friendly message.
     CHECK (end_date >= start_date)
 );
@@ -42,9 +44,5 @@ CREATE TABLE IF NOT EXISTS trip_cities (
     PRIMARY KEY (trip_id, state_id, city)
 );
 
--- Wrong passwords, for the "5 tries, then wait a minute" rule. Only kept for a
--- minute. failed_at is milliseconds since 1970.
-CREATE TABLE IF NOT EXISTS login_failures (
-    id        INTEGER PRIMARY KEY,
-    failed_at INTEGER NOT NULL
-);
+-- Signing in is Clerk's job now, so the old wrong-password table goes.
+DROP TABLE IF EXISTS login_failures;

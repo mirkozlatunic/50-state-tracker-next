@@ -1,6 +1,6 @@
-// Slice 8: form actions are let through proxy.ts so their own login check can
-// send you to the login page properly. So every action that changes data must
-// check the login first. This test reads the action files and makes sure.
+// Slice 8: every form action that changes data must check the login first.
+// Slice 13: that check is requireUserId(), which also says whose data it is.
+// This test reads the action files and makes sure.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -20,7 +20,7 @@ describe("form actions behind the login", () => {
   });
 
   test.each(actionFiles().map((file) => [file.split("src/app/")[1], file]))(
-    "every action in %s checks the login as its first step",
+    "every action in %s first finds out who's signed in",
     (_name, file) => {
       const source = readFileSync(file, "utf8");
       // Each exported action's first statement: the line after the "{" that
@@ -28,7 +28,7 @@ describe("form actions behind the login", () => {
       const actions = [...source.matchAll(/export async function (\w+)[^\n]*\{\n\s*([^;\n]+);/g)];
       expect(actions.length).toBeGreaterThan(0);
       for (const [, name, firstStatement] of actions) {
-        expect(firstStatement.trim(), name).toBe("await requireLogin()");
+        expect(firstStatement.trim(), name).toBe("const userId = await requireUserId()");
       }
     },
   );

@@ -8,6 +8,7 @@ import { PageBody, PageTitle } from "@/components/page-title";
 import { removeVisit } from "@/app/(app)/visits/actions";
 import { EditDeleteActions } from "@/components/edit-delete-actions";
 import { appDatabase } from "@/db/app";
+import { requireUserId } from "@/lib/auth/server";
 import { loadTrips, visitsForState } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { STATES, STATE_NAMES } from "@/lib/data/states";
@@ -59,9 +60,10 @@ async function StateContent({ params }: Pick<PageProps<"/states/[code]">, "param
 /** The visits and trips, read fresh from the database on every visit. */
 async function StateDetails({ code }: { code: string }) {
   await connection();
+  const userId = await requireUserId(); // only this person's visits and trips
   const db = await appDatabase();
-  const visits = await visitsForState(db, code);
-  const trips = upcomingTrips(await loadTrips(db), todayIn()).filter((trip) => trip.states.includes(code));
+  const visits = await visitsForState(db, userId, code);
+  const trips = upcomingTrips(await loadTrips(db, userId), todayIn()).filter((trip) => trip.states.includes(code));
 
   return (
     <>

@@ -3,6 +3,8 @@
 // Flask app's tables, so a backup from the Flask app imports as is.
 // Column names in quotes are the real names in the database; the keys
 // (like stateId) are the names used in the code.
+// Since slice 13 visits and trips also say whose they are (user_id); an
+// older database or a Flask backup gets that column when it's set up.
 
 import { sql } from "drizzle-orm";
 import { check, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
@@ -20,6 +22,7 @@ export const visits = sqliteTable("visits", {
   visitDate: text("visit_date").notNull(), // "YYYY-MM-DD"
   note: text("note").notNull().default(""),
   city: text("city"), // optional; official spelling from the city list
+  userId: text("user_id").notNull().default(""), // whose visit it is (their Clerk id)
 });
 
 export const trips = sqliteTable(
@@ -29,6 +32,7 @@ export const trips = sqliteTable(
     name: text("name").notNull(),
     startDate: text("start_date").notNull(), // "YYYY-MM-DD"
     endDate: text("end_date").notNull(), // "YYYY-MM-DD"
+    userId: text("user_id").notNull().default(""), // whose trip it is (their Clerk id)
   },
   // A backstop for the rule; the app checks it first with a friendly message.
   (table) => [check("end_not_before_start", sql`${table.endDate} >= ${table.startDate}`)],
@@ -54,9 +58,3 @@ export const tripCities = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.tripId, table.stateId, table.city] })],
 );
-
-// Wrong passwords, for the "5 tries, then wait a minute" rule (milliseconds since 1970).
-export const loginFailures = sqliteTable("login_failures", {
-  id: integer("id").primaryKey(),
-  failedAt: integer("failed_at").notNull(),
-});

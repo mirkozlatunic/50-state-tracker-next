@@ -11,8 +11,15 @@ Live: https://50-state-tracker-next.vercel.app
 
 ```bash
 pnpm install
-pnpm set-password   # once, in Terminal.app; saves a hash in .env.local
 pnpm dev            # then open http://localhost:3000
+```
+
+Signing in is [Clerk](https://clerk.com) (email code or Google). Put its two
+keys from the Clerk dashboard (API keys) in `.env.local`:
+
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
 ```
 
 The computer uses its own database file, `local.sqlite` (git ignores it).
@@ -23,8 +30,14 @@ The computer uses its own database file, `local.sqlite` (git ignores it).
 pnpm lint && pnpm typecheck && pnpm build
 pnpm test        # unit tests (Vitest), each with its own temporary database
 pnpm test:e2e    # browser tests (Playwright), desktop and iPhone sizes
-pnpm test:live   # checks against the online site (no password needed)
+pnpm test:live   # checks against the online site (no account needed)
 ```
+
+The browser tests sign in as two Clerk test people (`tracker-a+clerk_test@example.com`
+and `tracker-b+…`), created in the Clerk app the first time. `+clerk_test`
+addresses never get real email; their sign-in code is 424242. On GitHub the
+checks need the same two Clerk keys as repository secrets
+(`gh secret set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `gh secret set CLERK_SECRET_KEY`).
 
 Keep the Mac awake and plugged in while the browser tests run; sleep makes them fail.
 
@@ -37,21 +50,24 @@ redeploy after changing one (settings only reach new deployments).
 |---|---|---|---|
 | `DATABASE_URL` | The Turso database address | `tracker` (real data) | `tracker-preview` (test data) |
 | `DATABASE_AUTH_TOKEN` | Its token: `turso db tokens create <name>` | for `tracker` | for `tracker-preview` |
-| `PASSWORD_HASH` | From `.env.local` after `pnpm set-password` | same | same |
-| `SESSION_SECRET` | From `.env.local` after `pnpm set-password` | same | same |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API keys | Clerk production app | Clerk development app |
+| `CLERK_SECRET_KEY` | Clerk dashboard → API keys | Clerk production app | Clerk development app |
 
 ## Moving the data (from the Flask app, or from a backup)
 
-A backup is one SQLite file with the same tables in both apps, so it loads
-straight into Turso:
+A backup is one SQLite file with the same tables in both apps (plus `user_id`),
+so it loads straight into Turso. Each person's backup holds only their own
+visits and trips.
 
-1. Download a backup: "Download backup" at the bottom of any page.
+1. Download a backup: "Download backup" in the menu at the top right.
 2. Create a database from it: `turso db create tracker --from-file ~/Downloads/tracker-YYYY-MM-DD.sqlite`
    (a new name if `tracker` already exists).
 3. Point Production at it: change `DATABASE_URL` and `DATABASE_AUTH_TOKEN` on Vercel, then redeploy.
-4. Run `pnpm test:live`, then log in and look around.
+4. Run `pnpm test:live`, then sign in and look around. Rows from the Flask app
+   (or from before accounts) have no owner yet (`user_id` is empty) and show
+   up for nobody until they're given to someone.
 
 ## iPhone home screen
 
-Open the live address in Safari, log in, then Share → Add to Home Screen. It
+Open the live address in Safari, sign in, then Share → Add to Home Screen. It
 opens full screen on the map, with the name "50 States".

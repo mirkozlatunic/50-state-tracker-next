@@ -1,4 +1,5 @@
-// Slice 9: checks against the real, online site (no password needed).
+// Slice 9: checks against the real, online site (no account needed).
+// Slice 13: signing in is Clerk's job now, so these check the sign-in page.
 // Run with: pnpm test:live   (LIVE_URL picks another address, e.g. a preview)
 import { expect, test } from "@playwright/test";
 
@@ -12,42 +13,36 @@ test("plain http is sent on to https", async ({ request }) => {
 });
 
 test("browsers are told to always use https", async ({ request }) => {
-  const response = await request.get(`${LIVE}/login`);
+  const response = await request.get(`${LIVE}/sign-in`);
   expect(response.headers()["strict-transport-security"]).toMatch(/max-age=\d+/);
 });
 
-test("logged out, every page goes to the login page and remembers where you were going", async ({ request }) => {
-  for (const path of ["/", "/states", "/states/CA", "/map?year=2027", "/trips", "/years", "/visits/new"]) {
-    const response = await request.get(`${LIVE}${path}`, { maxRedirects: 0 });
-    expect([302, 307, 308], path).toContain(response.status());
-    const location = response.headers().location ?? "";
-    // "/" first goes to /states, which then asks for the password.
-    if (path !== "/") expect(location, path).toContain(`/login?next=${encodeURIComponent(path)}`);
+test("signed out, every page goes to sign in and remembers where you were going", async ({ page }) => {
+  for (const path of ["/states", "/states/CA", "/map?year=2027", "/trips", "/years", "/visits/new"]) {
+    await page.goto(`${LIVE}${path}`);
+    await expect(page, path).toHaveURL(/\/sign-in/);
+    expect(decodeURIComponent(page.url()), path).toContain(path);
   }
 });
 
 test("the backup and the city lists are never open to strangers", async ({ request }) => {
   for (const path of ["/backup", "/api/cities/CO"]) {
     const response = await request.get(`${LIVE}${path}`, { maxRedirects: 0 });
-    expect([302, 307, 308], path).toContain(response.status());
-    expect(response.headers().location, path).toContain("/login");
+    expect(response.status(), path).not.toBe(200);
   }
 });
 
-test("the login page works and the app is set up (a password is set)", async ({ page }) => {
-  const response = await page.goto(`${LIVE}/login`);
+test("the sign-in page works and offers email and Google", async ({ page }) => {
+  const response = await page.goto(`${LIVE}/sign-in`);
   expect(response?.status()).toBe(200);
-  await expect(page).toHaveTitle("Log in · 50 States Tracker");
-  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(page).toHaveTitle("Sign in · 50 States Tracker");
+  await expect(page.getByLabel("Email address")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Google/ })).toBeVisible();
 });
 
-test("a wrong password is refused (and the database answers)", async ({ page }) => {
+test("the old /login address goes to sign in", async ({ page }) => {
   await page.goto(`${LIVE}/login`);
-  await page.getByLabel("Password").fill("definitely not the password");
-  const answer = page.waitForResponse((response) => response.request().method() === "POST");
-  await page.getByRole("button", { name: "Log in" }).click();
-  await answer;
-  await expect(page.locator("form").getByRole("alert")).toHaveText("That password isn't right.");
+  await expect(page).toHaveURL(/\/sign-in/);
 });
 
 test("the manifest and icons load without logging in", async ({ request }) => {

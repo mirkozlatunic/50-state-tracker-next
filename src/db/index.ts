@@ -18,12 +18,28 @@ export function openDatabase(config: DatabaseConfig) {
 
 export type Database = ReturnType<typeof openDatabase>;
 
+/** Add the user_id column to a table from before accounts (slice 13), if it's
+ * missing. Its rows get "" (nobody's) until they're given to someone.
+ * PRAGMA table_info lists a table's columns. */
+async function addUserColumn(db: Database, table: "visits" | "trips") {
+  const columns = (await db.$client.execute(`PRAGMA table_info(${table})`)).rows.map((row) => row.name);
+  if (!columns.includes("user_id")) {
+    await db.$client.execute(`ALTER TABLE ${table} ADD COLUMN user_id TEXT NOT NULL DEFAULT ''`);
+  }
+}
+
 /** Create the tables (from schema.sql) and add the 50 states.
  * Safe to run more than once: existing tables and data are kept, and
  * INSERT OR IGNORE skips states that are already there. */
 export async function setupDatabase(db: Database) {
   const schemaSql = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
   await db.$client.executeMultiple(schemaSql);
+  await addUserColumn(db, "visits");
+  await addUserColumn(db, "trips");
+  // An "index" lets the database find one person's rows without reading every row.
+  await db.$client.executeMultiple(`
+    CREATE INDEX IF NOT EXISTS visits_user ON visits (user_id);
+    CREATE INDEX IF NOT EXISTS trips_user ON trips (user_id);`);
   await db.$client.batch(
     STATES.map(([code, name]) => ({ sql: "INSERT OR IGNORE INTO states (code, name) VALUES (?, ?)", args: [code, name] })),
     "write",
