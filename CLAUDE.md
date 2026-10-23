@@ -38,6 +38,8 @@ No other packages without asking me first.
 - Checks (all must pass before a slice is done):
   `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` (Vitest),
   `pnpm test:e2e` (Playwright)
+- `E2E_BUILT=1 pnpm test:e2e` (after `pnpm build`) runs the browser tests against the
+  built app, like GitHub does (split over 3 machines); plain `pnpm test:e2e` uses the dev server.
 - After a deploy: `pnpm test:live` checks the online site (no account needed).
 - The browser tests sign in as two Clerk test people
   (tracker-a/tracker-b+clerk_test@example.com; code 424242, no real email).

@@ -69,6 +69,9 @@ export async function expectCurrentPage(page: Page, name: string) {
 /** Open the test app's database (made up for the tests, never the real data). */
 export async function openTestDatabase() {
   const db = openDatabase({ url: TEST_DB_URL });
+  // The app reads this same file at the same time. When it's busy, wait up to
+  // 5 seconds instead of failing straight away with "database is locked".
+  await db.$client.execute("PRAGMA busy_timeout = 5000");
   await setupDatabase(db);
   return db;
 }

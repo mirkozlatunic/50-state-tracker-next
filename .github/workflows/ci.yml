@@ -5,13 +5,16 @@ on:
     branches: [main]
   pull_request:
 
+# The Clerk keys (repository secrets): the build and the browser tests need them.
+env:
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+  CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
 jobs:
+  # Lint, typecheck, build and unit tests: quick, on one machine.
   check:
     runs-on: ubuntu-latest
-    # The Clerk keys (repository secrets): the build and the browser tests need them.
-    env:
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -24,5 +27,31 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
-      - run: pnpm exec playwright install --with-deps chromium webkit
-      - run: pnpm test:e2e
+
+  # The browser tests, split over 3 machines running at the same time. Each
+  # machine runs a third of the tests against its own built app and its own
+  # test database, so they can't get in each other's way.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Playwright's own ready-made machine: its browsers and their system packages
+    # are already installed, so nothing comes from Ubuntu's (sometimes very slow)
+    # package mirror. Its version must match @playwright/test in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
+        env:
+          E2E_BUILT: "1"

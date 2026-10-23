@@ -3,9 +3,8 @@
 // Slice 11: the header is a fixed pill that stays on screen while scrolling,
 // and Download backup and Log out moved from the footer into its menu.
 import { expect, test, type Page } from "@playwright/test";
-import { expectCurrentPage, logIn, openNavMenu, TEST_DB_URL, userId } from "./helpers";
+import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from "./helpers";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
-import { openDatabase, setupDatabase } from "@/db";
 import { visitedStateCount } from "@/db/queries";
 
 const NAV = [
@@ -49,8 +48,7 @@ test.describe("the header", () => {
   });
 
   test("the counter shows the visited states from the database", async ({ page }) => {
-    const db = openDatabase({ url: TEST_DB_URL });
-    await setupDatabase(db);
+    const db = await openTestDatabase();
     const count = await visitedStateCount(db, userId());
     db.$client.close();
     await expect(counter(page)).toHaveText(`${count} of 50`);
