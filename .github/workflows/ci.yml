@@ -34,6 +34,11 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Playwright's own ready-made machine: its browsers and their system packages
+    # are already installed, so nothing comes from Ubuntu's (sometimes very slow)
+    # package mirror. Its version must match @playwright/test in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
     strategy:
       fail-fast: false
       matrix:
@@ -47,9 +52,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      # Sometimes GitHub's package download hangs; give up after 5 minutes instead of waiting forever.
-      - run: pnpm exec playwright install --with-deps chromium webkit
-        timeout-minutes: 5
       - run: pnpm test:e2e --shard=${{ matrix.shard }}/3
         env:
           E2E_BUILT: "1"
