@@ -52,7 +52,7 @@ describe("setting up the database", () => {
   });
 
   test("each person's settings have their own table (slice 19)", async () => {
-    expect(await columns("user_settings")).toEqual(["user_id", "celebrated"]);
+    expect(await columns("user_settings")).toEqual(["user_id", "celebrated", "share_id"]); // share_id: slice 20
   });
 
   test("a visit's photos have their own table (slice 18)", async () => {

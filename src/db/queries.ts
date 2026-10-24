@@ -8,6 +8,7 @@
 import { and, asc, countDistinct, desc, eq, exists, inArray, sql } from "drizzle-orm";
 import type { Trip, Visit } from "@/lib/progress";
 import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
+import { isShareId, newShareId } from "@/lib/share";
 import type { TripCity } from "@/lib/rules";
 import type { Database } from "./index";
 import { states, tripCities, trips, tripStates, userSettings, visitPhotos, visits } from "./schema";
@@ -301,4 +302,43 @@ export async function setCelebratedMilestone(db: Database, userId: string, miles
     .insert(userSettings)
     .values({ userId, celebrated: milestone })
     .onConflictDoUpdate({ target: userSettings.userId, set: { celebrated: milestone } });
+}
+
+// ---- Sharing my map (slice 20). Off until I turn it on; the link /share/<code>
+// shows only which states I've visited.
+
+/** My share code, or null when my map isn't shared. */
+export async function shareId(db: Database, userId: string): Promise<string | null> {
+  const [row] = await db.select({ shareId: userSettings.shareId }).from(userSettings).where(eq(userSettings.userId, userId));
+  return row?.shareId ?? null;
+}
+
+/** Share my map with a new code (replacing an old one, whose link stops working). Returns the code. */
+export async function startSharing(db: Database, userId: string): Promise<string> {
+  const code = newShareId();
+  await db
+    .insert(userSettings)
+    .values({ userId, shareId: code })
+    .onConflictDoUpdate({ target: userSettings.userId, set: { shareId: code } });
+  return code;
+}
+
+/** Stop sharing my map: its link stops working. */
+export async function stopSharing(db: Database, userId: string): Promise<void> {
+  await db.update(userSettings).set({ shareId: null }).where(eq(userSettings.userId, userId));
+}
+
+/** What a shared link shows: the states its owner has visited (each once, A to Z),
+ * and nothing else. null for a code that's unknown or no longer shared. */
+export async function sharedProgress(db: Database, code: string): Promise<{ visitedStates: string[] } | null> {
+  if (!isShareId(code)) return null;
+  const [owner] = await db.select({ userId: userSettings.userId }).from(userSettings).where(eq(userSettings.shareId, code));
+  if (!owner) return null;
+  const rows = await db
+    .selectDistinct({ code: states.code })
+    .from(visits)
+    .innerJoin(states, eq(states.id, visits.stateId))
+    .where(eq(visits.userId, owner.userId))
+    .orderBy(asc(states.code));
+  return { visitedStates: rows.map((row) => row.code) };
 }

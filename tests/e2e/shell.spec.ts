@@ -48,10 +48,10 @@ test.describe("the header", () => {
     for (const [name, href] of NAV) await expect(nav(page).getByRole("link", { name })).toHaveAttribute("href", href);
   });
 
-  test("on a phone, the menu lists every part of the app, then backup, account and log out", async ({ page }, info) => {
+  test("on a phone, the menu lists every part of the app, then sharing, backup, account and log out", async ({ page }, info) => {
     test.skip(!isPhone(info.project.name), "phone layout");
     await openNavMenu(page);
-    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Download backup", "Manage account", "Log out"]);
+    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Share my map", "Download backup", "Manage account", "Log out"]);
     await page.getByRole("menuitem", { name: "Trips" }).click();
     await expect(page).toHaveURL("/trips");
     await expectCurrentPage(page, "Trips");

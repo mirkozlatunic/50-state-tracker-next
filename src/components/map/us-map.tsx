@@ -18,7 +18,8 @@ const FILL: Record<StateStatus, string> = {
   unvisited: "fill-unvisited",
 };
 
-export function UsMap({ statuses, dots }: { statuses: Record<string, StateStatus>; dots: Dot[] }) {
+/** `linked`: each state links to its page (false on a shared map, where those pages are private). */
+export function UsMap({ statuses, dots, linked = true }: { statuses: Record<string, StateStatus>; dots: Dot[]; linked?: boolean }) {
   return (
     <figure aria-label="Map of the 50 states" className="relative aspect-959/593 w-full">
       <svg viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} className="absolute inset-0 size-full">
@@ -28,19 +29,27 @@ export function UsMap({ statuses, dots }: { statuses: Record<string, StateStatus
             <rect width="2" height="7" className="fill-planned-foreground opacity-30" />
           </pattern>
         </defs>
-        {STATES.map(([code, name]) => (
-          // An SVG link (<a> inside <svg>); next/link can't draw inside a drawing.
-          <a key={code} href={`/states/${code}`} aria-label={name}>
+        {STATES.map(([code, name]) => {
+          const shape = (
             <path
+              key={code}
               d={STATE_PATHS[code]}
               data-state={code}
               data-status={statuses[code]}
-              className={`${FILL[statuses[code]]} stroke-map-stroke stroke-1 transition-opacity hover:opacity-80`}
+              className={`${FILL[statuses[code]]} stroke-map-stroke stroke-1 ${linked ? "transition-opacity hover:opacity-80" : ""}`}
             >
               <title>{name}</title>
             </path>
-          </a>
-        ))}
+          );
+          // An SVG link (<a> inside <svg>); next/link can't draw inside a drawing.
+          return linked ? (
+            <a key={code} href={`/states/${code}`} aria-label={name}>
+              {shape}
+            </a>
+          ) : (
+            shape
+          );
+        })}
         {/* The stripes go on top of the planned states, so planned doesn't rely
             on the gold color alone. Clicks go through them to the state below. */}
         <g aria-hidden className="pointer-events-none">
