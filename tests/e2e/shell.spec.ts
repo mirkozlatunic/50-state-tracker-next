@@ -2,6 +2,8 @@
 // desktop and iPhone, with the buttons measured to line up.
 // Slice 11: the header is a fixed pill that stays on screen while scrolling,
 // and Download backup and Log out moved from the footer into its menu.
+// Slice 22: the logo shows its name as a tooltip instead of text, the account
+// button shows your profile picture, and light/dark fades softly.
 import { expect, test, type Page } from "@playwright/test";
 import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from "./helpers";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
@@ -71,6 +73,43 @@ test.describe("the header", () => {
     const heights = await Promise.all(items.map(async (item) => (await item.boundingBox())?.height));
     expect(new Set(heights).size).toBe(1);
     for (const item of items) await expect(item).toHaveAttribute("data-slot", "button");
+  });
+});
+
+test.describe("the logo's name", () => {
+  const logo = (page: Page) => header(page).getByRole("link", { name: "50 States Tracker" });
+  // Tooltips are visual only (screen readers get the link's own name), so they
+  // have no role to look for; this is shadcn's marker on the pop-up.
+  const TOOLTIP = '[data-slot="tooltip-content"]';
+
+  test("isn't written next to the logo any more", async ({ page }) => {
+    await expect(logo(page)).toBeVisible();
+    expect(await header(page).innerText()).not.toContain("50 States Tracker");
+  });
+
+  test("shows as a tooltip when the mouse is over the logo", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "no mouse on a phone");
+    await logo(page).hover();
+    await expect(page.locator(TOOLTIP)).toHaveText("50 States Tracker");
+  });
+
+  test("shows as a tooltip when the logo is reached with the keyboard", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "no keyboard on a phone");
+    // Tab from the top of the page until the logo has the focus.
+    await expect(async () => {
+      await page.keyboard.press("Tab");
+      await expect(logo(page)).toBeFocused({ timeout: 200 });
+    }).toPass({ timeout: 10_000 });
+    await expect(page.locator(TOOLTIP)).toHaveText("50 States Tracker");
+  });
+});
+
+test.describe("the account button", () => {
+  test("without a profile picture (like the test people), it shows the person icon", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "the phone shows the Menu icon instead");
+    const button = header(page).getByRole("button", { name: "Account" });
+    await expect(button.locator("svg")).toBeVisible();
+    await expect(button.locator("img")).toHaveCount(0);
   });
 });
 
@@ -165,6 +204,58 @@ test.describe("light and dark", () => {
     const before = await background();
     await themeButton(page).click();
     await expect.poll(background).not.toBe(before);
+  });
+
+  test("switching fades softly from one theme to the other (about 0.3 s)", async ({ page }) => {
+    // Count the browser's page fades ("view transitions") and note how long they take.
+    await page.addInitScript(() => {
+      const start = document.startViewTransition?.bind(document);
+      if (!start) return;
+      const record = window as unknown as { fades: number; fadeDurations: number[] };
+      record.fades = 0;
+      document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
+        record.fades += 1;
+        const transition = start(update);
+        transition.ready.then(() => {
+          record.fadeDurations = document
+            .getAnimations()
+            .filter((animation) => (animation.effect as KeyframeEffect | null)?.pseudoElement?.startsWith("::view-transition"))
+            .map((animation) => Number(animation.effect!.getTiming().duration));
+        });
+        return transition;
+      }) as typeof document.startViewTransition;
+    });
+    await page.goto("/map");
+    const html = page.locator("html");
+    const startedDark = ((await html.getAttribute("class")) ?? "").includes("dark");
+    await themeButton(page).click();
+    await expect(html).toHaveClass(startedDark ? /^(?!.*\bdark\b)/ : /\bdark\b/);
+    expect(await page.evaluate(() => (window as unknown as { fades: number }).fades)).toBe(1);
+    const durations = await page.waitForFunction(() => (window as unknown as { fadeDurations?: number[] }).fadeDurations);
+    const values = (await durations.jsonValue()) as number[];
+    expect(values.length).toBeGreaterThan(0);
+    for (const duration of values) expect(duration).toBe(300);
+  });
+
+  test("with reduced motion turned on, it switches at once (no fade)", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.addInitScript(() => {
+      const record = window as unknown as { fades: number };
+      record.fades = 0;
+      const start = document.startViewTransition?.bind(document);
+      if (start) {
+        document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
+          record.fades += 1;
+          return start(update);
+        }) as typeof document.startViewTransition;
+      }
+    });
+    await page.goto("/map");
+    const html = page.locator("html");
+    const startedDark = ((await html.getAttribute("class")) ?? "").includes("dark");
+    await themeButton(page).click();
+    await expect(html).toHaveClass(startedDark ? /^(?!.*\bdark\b)/ : /\bdark\b/);
+    expect(await page.evaluate(() => (window as unknown as { fades: number }).fades)).toBe(0);
   });
 
   test("without a saved choice, the page follows the device's setting", async ({ browser }) => {

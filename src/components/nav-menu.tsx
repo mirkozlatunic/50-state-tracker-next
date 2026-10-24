@@ -3,8 +3,9 @@
 // Share my map, Download backup, Manage account and Log out. On a phone ("Menu") it lists
 // the pages too, because the page links don't fit in the header there.
 
+import Image from "next/image";
 import Link from "next/link";
-import { useClerk } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { CircleUser, Download, LogOut, Menu, Share2, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "cn";
+import { accountPicture } from "@/lib/account-picture";
 import { isCurrent, LINKS } from "@/lib/nav-links";
 
 // On touch screens every item is at least 44px tall, big enough for a finger.
@@ -26,6 +28,9 @@ const ITEM = "pointer-coarse:min-h-11";
 export function NavMenu({ phone = false, pathname = "", className }: { phone?: boolean; pathname?: string; className?: string }) {
   // useClerk gives the signed-in session's controls: open account settings, sign out.
   const clerk = useClerk();
+  // useUser gives the signed-in person; their profile picture (e.g. from
+  // Google) replaces the person icon on the computer's Account button.
+  const picture = accountPicture(useUser().user);
   return (
     <DropdownMenu>
       {/* Both versions are on the page; CSS shows the one that fits the screen. */}
@@ -39,7 +44,13 @@ export function NavMenu({ phone = false, pathname = "", className }: { phone?: b
           />
         }
       >
-        {phone ? <Menu aria-hidden /> : <CircleUser aria-hidden />}
+        {phone ? (
+          <Menu aria-hidden />
+        ) : picture ? (
+          <Image src={picture} alt="" width={28} height={28} sizes="28px" className="size-7 rounded-full object-cover" />
+        ) : (
+          <CircleUser aria-hidden />
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-auto min-w-44">
         {phone && (
