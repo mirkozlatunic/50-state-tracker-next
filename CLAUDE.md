@@ -122,6 +122,11 @@ No other packages without asking me first.
   not only proxy.ts.
 - The home page (`/`) shows the heading, a "Start tracking" button, my map
   (states only, no city dots) and my numbers: 50 states, visited, remaining.
+- Milestones at 10, 25 and 50 visited states: shown on the home page (reached
+  ones gold with a check mark, the next one "N to go"), and celebrated once
+  with a card on the state page when a saved visit reaches one. Only the
+  highest milestone celebrated is stored (user_settings); deleting visits below
+  it doesn't make it celebrate again.
 - Future ideas are in `docs/roadmap.md`. Don't build any of them without being asked.
 - On phones (640px wide or less), `/map` shows the next trip and the four
   Census regions as cards instead of the map. Bigger screens keep the map.

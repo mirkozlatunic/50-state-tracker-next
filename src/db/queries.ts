@@ -10,7 +10,7 @@ import type { Trip, Visit } from "@/lib/progress";
 import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
 import type { TripCity } from "@/lib/rules";
 import type { Database } from "./index";
-import { states, tripCities, trips, tripStates, visitPhotos, visits } from "./schema";
+import { states, tripCities, trips, tripStates, userSettings, visitPhotos, visits } from "./schema";
 
 /** How many different states have at least one of my visits (the "X of 50" counter). */
 export async function visitedStateCount(db: Database, userId: string): Promise<number> {
@@ -285,4 +285,20 @@ export async function photoCounts(db: Database, userId: string, visitIds: number
     .where(and(inArray(visitPhotos.visitId, visitIds), eq(visitPhotos.userId, userId)))
     .groupBy(visitPhotos.visitId);
   return new Map(rows.map((row) => [row.visitId, Number(row.count)]));
+}
+
+// ---- My settings (slice 19): one row per person, made the first time it's needed.
+
+/** The highest milestone I've already celebrated (0 = none yet). */
+export async function celebratedMilestone(db: Database, userId: string): Promise<number> {
+  const [row] = await db.select({ celebrated: userSettings.celebrated }).from(userSettings).where(eq(userSettings.userId, userId));
+  return row?.celebrated ?? 0;
+}
+
+/** Remember that I've celebrated `milestone`. "Upsert": add my row, or update it if it's there. */
+export async function setCelebratedMilestone(db: Database, userId: string, milestone: number): Promise<void> {
+  await db
+    .insert(userSettings)
+    .values({ userId, celebrated: milestone })
+    .onConflictDoUpdate({ target: userSettings.userId, set: { celebrated: milestone } });
 }
