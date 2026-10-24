@@ -1,8 +1,8 @@
 // The app's pages, as listed in the header (the nav on a computer, the menu on a phone).
 
 export const LINKS = [
+  { href: "/map", label: "Map" }, // first: the map is the page you land on (slice 21)
   { href: "/states", label: "States" },
-  { href: "/map", label: "Map" },
   { href: "/visits/new", label: "Add visit" },
   { href: "/trips", label: "Trips" },
   { href: "/years", label: "Years" },

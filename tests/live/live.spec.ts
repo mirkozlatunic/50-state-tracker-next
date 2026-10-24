@@ -25,6 +25,16 @@ test("signed out, every page goes to sign in and remembers where you were going"
   }
 });
 
+test("the landing page opens without signing in and shows sample data", async ({ page }) => {
+  const response = await page.goto(`${LIVE}/`);
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveURL(`${LIVE}/`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("All 50 States. One Journey.");
+  await expect(page.getByText("Sample data", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Start tracking" }).click();
+  await expect(page).toHaveURL(/\/sign-in/);
+});
+
 test("the backup and the city lists are never open to strangers", async ({ request }) => {
   for (const path of ["/backup", "/api/cities/CO"]) {
     const response = await request.get(`${LIVE}${path}`, { maxRedirects: 0 });

@@ -5,6 +5,7 @@ import { isPublicPath } from "@/lib/auth/public-routes";
 
 describe("open without signing in", () => {
   test.each([
+    "/", // the landing page with sample data (slice 21)
     "/sign-in",
     "/sign-in/factor-one", // Clerk's sign-in steps live under /sign-in/...
     "/sign-up",
@@ -23,7 +24,6 @@ describe("open without signing in", () => {
 
 describe("needs signing in", () => {
   test.each([
-    "/",
     "/states",
     "/states/CA",
     "/map",

@@ -18,7 +18,8 @@ const FILL: Record<StateStatus, string> = {
   unvisited: "fill-unvisited",
 };
 
-/** `linked`: each state links to its page (false on a shared map, where those pages are private). */
+/** `linked`: each state (and city dot) links to its page (false on a shared map
+ * or the landing page, where those pages are private). */
 export function UsMap({ statuses, dots, linked = true }: { statuses: Record<string, StateStatus>; dots: Dot[]; linked?: boolean }) {
   return (
     <figure aria-label="Map of the 50 states" className="relative aspect-959/593 w-full">
@@ -66,6 +67,7 @@ export function UsMap({ statuses, dots, linked = true }: { statuses: Record<stri
           details={dotDetails(dot)}
           stateCode={dot.state}
           stateName={STATE_NAMES[dot.state]}
+          linked={linked}
           {...dotPosition(dot.x, dot.y)}
         />
       ))}

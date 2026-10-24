@@ -1,6 +1,8 @@
 // Which addresses open without signing in. proxy.ts asks this before every
 // page; every other address sends you to the sign-in page.
 
+// The landing page ("/" only, slice 21) shows sample data, nobody's real data.
+const LANDING_PAGE = "/";
 // Pages: Clerk's sign-in and sign-up (with their steps underneath, like
 // /sign-in/factor-one), the old /login, which sends you on to /sign-in, and
 // shared maps (/share/<code>, slice 20). /sharing (my settings) isn't one of them.
@@ -12,6 +14,7 @@ const PUBLIC_FOLDERS = ["/icons/"];
 
 /** True when `pathname` opens without signing in. */
 export function isPublicPath(pathname: string): boolean {
+  if (pathname === LANDING_PAGE) return true;
   if (PUBLIC_FILES.includes(pathname)) return true;
   if (PUBLIC_FOLDERS.some((folder) => pathname.startsWith(folder))) return true;
   // The page itself or a page under it: "/sign-in/x" yes, "/sign-inx" no.

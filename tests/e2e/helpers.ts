@@ -34,7 +34,7 @@ export async function logIn(page: Page, next = "/", email = USER_A_EMAIL) {
   await clerk.signIn({ page, emailAddress: email });
   // Just after signing in, Clerk sometimes moves the browser to another page by
   // itself, which can cut off the page that's opening; then open it again.
-  // ("/" itself forwards to /states, so this only checks it isn't /sign-in.)
+  // ("/" itself forwards to /map, so this only checks it isn't /sign-in.)
   await expect(async () => {
     await page.goto(next);
     await expect(page).not.toHaveURL(/\/sign-in/, { timeout: 2000 });

@@ -1,4 +1,5 @@
-// Slice 19: milestones at 10, 25 and 50 states, on the home page, and a
+// Slice 19: milestones at 10, 25 and 50 states, on the map page (the home
+// page until slice 21), and a
 // one-time celebration card the moment a saved visit reaches one.
 import { expect, test, type Page } from "@playwright/test";
 import { addVisit, setCelebratedMilestone } from "@/db/queries";
@@ -34,17 +35,17 @@ test.beforeEach(async ({ page }) => {
   await logIn(page);
 });
 
-test.describe("on the home page", () => {
+test.describe("on the map page", () => {
   test("with 9 states: none reached yet, 1 to go to 10", async ({ page }) => {
     await seed(9);
-    await page.goto("/");
+    await page.goto("/map");
     await expect(milestones(page).getByRole("listitem")).toHaveText(["10 states: 1 to go", "25 states", "50 states"]);
     await expect(milestones(page).locator("[data-reached]")).toHaveCount(0);
   });
 
   test("with 12 states: 10 reached (marked), 13 to go to 25", async ({ page }) => {
     await seed(12, 10);
-    await page.goto("/");
+    await page.goto("/map");
     await expect(milestones(page).getByRole("listitem")).toHaveText(["10 states, reached", "25 states: 13 to go", "50 states"]);
     await expect(milestones(page).locator("[data-reached]")).toHaveCount(1);
     await expect(milestones(page).locator("[data-reached] svg")).toHaveCount(1); // a check mark, not only gold
@@ -52,7 +53,7 @@ test.describe("on the home page", () => {
 
   test("with all 50: every milestone reached", async ({ page }) => {
     await seed(50, 50);
-    await page.goto("/");
+    await page.goto("/map");
     await expect(milestones(page).locator("[data-reached]")).toHaveCount(3);
   });
 });

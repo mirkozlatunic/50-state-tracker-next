@@ -64,8 +64,9 @@ export function RegionCard({ region }: { region: RegionSummary }) {
   );
 }
 
-/** The soonest trip that hasn't ended, or an offer to plan one. */
-export function NextTripCard({ next }: { next: { trip: Trip; when: string } | null }) {
+/** The soonest trip that hasn't ended, or an offer to plan one. `linked={false}`:
+ * the trip's name is plain text (the landing page's sample has nowhere to link). */
+export function NextTripCard({ next, linked = true }: { next: { trip: Trip; when: string } | null; linked?: boolean }) {
   return (
     <section aria-label="Next trip">
       <Card size="sm">
@@ -73,9 +74,13 @@ export function NextTripCard({ next }: { next: { trip: Trip; when: string } | nu
           {next ? (
             <>
               <p className="text-sm text-muted-foreground">Next trip · {next.when}</p>
-              <Link href="/trips" className="text-lg font-semibold hover:underline">
-                {next.trip.name}
-              </Link>
+              {linked ? (
+                <Link href="/trips" className="text-lg font-semibold hover:underline">
+                  {next.trip.name}
+                </Link>
+              ) : (
+                <p className="text-lg font-semibold">{next.trip.name}</p>
+              )}
               <p className="text-sm tabular-nums">
                 {next.trip.startDate} to {next.trip.endDate}
               </p>
