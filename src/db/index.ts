@@ -21,11 +21,12 @@ export type Database = ReturnType<typeof openDatabase>;
 /** Add a text column to a table from an older version of the app, if it's
  * missing; its existing rows get "". (PRAGMA table_info lists a table's columns.)
  * user_id came with accounts (slice 13): old rows belong to nobody until given
- * to someone. story came with visit pages (slice 17). */
-async function addTextColumn(db: Database, table: "visits" | "trips", column: "user_id" | "story") {
+ * to someone. story came with visit pages (slice 17). share_id came with shared
+ * maps (slice 20) and may be empty (NULL), so it gets its own `type`. */
+async function addTextColumn(db: Database, table: "visits" | "trips" | "user_settings", column: string, type = "TEXT NOT NULL DEFAULT ''") {
   const columns = (await db.$client.execute(`PRAGMA table_info(${table})`)).rows.map((row) => row.name);
   if (!columns.includes(column)) {
-    await db.$client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`);
+    await db.$client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
   }
 }
 
@@ -38,10 +39,12 @@ export async function setupDatabase(db: Database) {
   await addTextColumn(db, "visits", "user_id");
   await addTextColumn(db, "trips", "user_id");
   await addTextColumn(db, "visits", "story");
+  await addTextColumn(db, "user_settings", "share_id", "TEXT");
   // An "index" lets the database find one person's rows without reading every row.
   await db.$client.executeMultiple(`
     CREATE INDEX IF NOT EXISTS visits_user ON visits (user_id);
-    CREATE INDEX IF NOT EXISTS trips_user ON trips (user_id);`);
+    CREATE INDEX IF NOT EXISTS trips_user ON trips (user_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS user_settings_share ON user_settings (share_id);`);
   await db.$client.batch(
     STATES.map(([code, name]) => ({ sql: "INSERT OR IGNORE INTO states (code, name) VALUES (?, ?)", args: [code, name] })),
     "write",

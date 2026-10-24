@@ -42,7 +42,11 @@ itself feel complicated.
 - **Backup:** the backup file would list the photos' addresses; the photos
   themselves are too big for it.
 
-## Phase 3: Milestones and sharing (milestones done: slice 19)
+## Phase 3: Milestones and sharing (done: slices 19 and 20)
+
+Built as planned below. Decided along the way: the shared page shows nothing
+besides the visited states and the count; links don't expire (until "Stop
+sharing" or "Make a new link"); a reached milestone gets a calm gold card.
 
 - **Milestones** at 10, 25 and 50 states: a small celebration the moment a
   visit reaches one, and the milestones you've reached on the home page. They

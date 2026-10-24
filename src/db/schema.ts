@@ -78,4 +78,5 @@ export const visitPhotos = sqliteTable("visit_photos", {
 export const userSettings = sqliteTable("user_settings", {
   userId: text("user_id").primaryKey(),
   celebrated: integer("celebrated").notNull().default(0),
+  shareId: text("share_id"), // slice 20: the code in my shared map's link, or null when not shared
 });

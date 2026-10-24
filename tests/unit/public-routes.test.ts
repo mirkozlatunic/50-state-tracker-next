@@ -14,6 +14,8 @@ describe("open without signing in", () => {
     "/favicon.ico",
     "/icons/icon-180.png",
     "/logo.png", // the badge on the sign-in page (and next/image fetches it without signing in)
+    "/share/abcdefghijklmnopqrstuv", // a shared map (slice 20)
+    "/share/abcdefghijklmnopqrstuv/opengraph-image", // its preview picture
   ])("%s", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
@@ -36,6 +38,7 @@ describe("needs signing in", () => {
     "/setup", // the old "set a password" page is gone
     "/photos/1", // photos are private (slice 18)
     "/api/visits/1/photos",
+    "/sharing", // my own share settings
   ])("%s", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });

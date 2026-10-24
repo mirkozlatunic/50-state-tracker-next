@@ -61,9 +61,11 @@ CREATE INDEX IF NOT EXISTS visit_photos_visit ON visit_photos (visit_id);
 
 -- Each person's settings, one row each (slice 19): the highest milestone
 -- (10, 25 or 50 states) already celebrated, so it's celebrated only once.
+-- (Its share_id index is made in src/db/index.ts, after older tables get the column.)
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id    TEXT PRIMARY KEY,
-    celebrated INTEGER NOT NULL DEFAULT 0
+    celebrated INTEGER NOT NULL DEFAULT 0,
+    share_id   TEXT  -- slice 20: the code in my shared map's link, or NULL when not shared
 );
 
 -- Signing in is Clerk's job now, so the old wrong-password table goes.

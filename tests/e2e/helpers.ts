@@ -27,7 +27,10 @@ export function userId(person: "A" | "B" = "A"): string {
  * clerk.signIn skips the email code (a testing shortcut); one test in
  * accounts.spec.ts signs in through the real form instead. */
 export async function logIn(page: Page, next = "/", email = USER_A_EMAIL) {
-  await page.goto("/sign-in"); // Clerk needs a page that loads it first
+  // Clerk needs a page that loads it first. "domcontentloaded": don't wait for
+  // every last file (a slow one from Clerk's servers made tests time out);
+  // clerk.signIn waits for Clerk to be ready itself.
+  await page.goto("/sign-in", { waitUntil: "domcontentloaded" });
   await clerk.signIn({ page, emailAddress: email });
   // Just after signing in, Clerk sometimes moves the browser to another page by
   // itself, which can cut off the page that's opening; then open it again.

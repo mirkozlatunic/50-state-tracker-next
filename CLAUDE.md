@@ -127,6 +127,11 @@ No other packages without asking me first.
   with a card on the state page when a saved visit reaches one. Only the
   highest milestone celebrated is stored (user_settings); deleting visits below
   it doesn't make it celebrate again.
+- Sharing (`/sharing`, in the account menu): off until I turn it on. Then
+  `/share/<code>` (22 random characters) opens without signing in and shows
+  only which states I've visited and the count: no dates, notes, cities, trips,
+  stories or photos, no links into the app, not listed by search engines. A
+  new link replaces the old one at once; "Stop sharing" ends it. Links don't expire.
 - Future ideas are in `docs/roadmap.md`. Don't build any of them without being asked.
 - On phones (640px wide or less), `/map` shows the next trip and the four
   Census regions as cards instead of the map. Bigger screens keep the map.

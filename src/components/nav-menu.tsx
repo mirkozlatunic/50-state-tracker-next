@@ -1,11 +1,11 @@
 "use client";
 // The menu at the right end of the header. On a computer ("Account") it holds
-// Download backup, Manage account and Log out. On a phone ("Menu") it lists
+// Share my map, Download backup, Manage account and Log out. On a phone ("Menu") it lists
 // the pages too, because the page links don't fit in the header there.
 
 import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
-import { CircleUser, Download, LogOut, Menu, UserCog } from "lucide-react";
+import { CircleUser, Download, LogOut, Menu, Share2, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -57,6 +57,10 @@ export function NavMenu({ phone = false, pathname = "", className }: { phone?: b
             <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuLinkItem render={<Link href="/sharing" />} className={ITEM}>
+          <Share2 aria-hidden />
+          Share my map
+        </DropdownMenuLinkItem>
         {/* A plain link on purpose: it downloads a file instead of opening a page. */}
         <DropdownMenuLinkItem href="/backup" download className={ITEM}>
           <Download aria-hidden />
