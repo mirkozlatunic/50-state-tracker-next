@@ -10,6 +10,7 @@ import {
   getTrip,
   getVisit,
   listStates,
+  setVisitStory,
   loadTrips,
   loadVisits,
   setTripDates,
@@ -67,6 +68,13 @@ describe("visits are private", () => {
     expect((await getVisit(db(), ME, id))?.note).toBe("Red Rocks");
     expect(await updateVisit(db(), ME, id, { ...RED_ROCKS, note: "changed" })).toBe(true);
     expect((await getVisit(db(), ME, id))?.note).toBe("changed");
+  });
+
+  test("someone else can't write my visit's story", async () => {
+    const id = await addVisit(db(), ME, RED_ROCKS);
+    await setVisitStory(db(), ME, id, "mine");
+    expect(await setVisitStory(db(), OTHER, id, "theirs")).toBe(false);
+    expect((await getVisit(db(), ME, id))?.story).toBe("mine");
   });
 
   test("someone else can't delete my visit", async () => {

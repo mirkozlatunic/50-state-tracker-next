@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS visits (
     visit_date TEXT NOT NULL,   -- "YYYY-MM-DD"
     note       TEXT NOT NULL DEFAULT '',
     city       TEXT,            -- optional; official spelling from src/lib/data/us_cities.csv
-    user_id    TEXT NOT NULL DEFAULT ''  -- whose visit it is (their Clerk id)
+    user_id    TEXT NOT NULL DEFAULT '', -- whose visit it is (their Clerk id)
+    story      TEXT NOT NULL DEFAULT ''  -- the longer, optional text on the visit page
 );
 
 CREATE TABLE IF NOT EXISTS trips (

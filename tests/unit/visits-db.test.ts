@@ -3,6 +3,7 @@
 import { describe, expect, test } from "vitest";
 import {
   addVisit,
+  setVisitStory,
   deleteVisit,
   getState,
   getVisit,
@@ -48,7 +49,7 @@ describe("one state", () => {
 describe("visits", () => {
   test("a saved visit comes back the way it was saved", async () => {
     const id = await addVisit(db(), ME, { state: "CO", visitDate: "2024-07-04", note: "Red Rocks", city: "Denver" });
-    expect(await getVisit(db(), ME, id)).toEqual({ id, state: "CO", visitDate: "2024-07-04", note: "Red Rocks", city: "Denver" });
+    expect(await getVisit(db(), ME, id)).toEqual({ id, state: "CO", visitDate: "2024-07-04", note: "Red Rocks", city: "Denver", story: "" });
   });
 
   test("an unknown visit gives null", async () => {
@@ -67,7 +68,7 @@ describe("visits", () => {
   test("editing changes state, date, note and city", async () => {
     const id = await addVisit(db(), ME, { state: "CA", visitDate: "2024-07-04", note: "old", city: "Fresno" });
     await updateVisit(db(), ME, id, { state: "NV", visitDate: "2024-08-01", note: "new", city: null });
-    expect(await getVisit(db(), ME, id)).toEqual({ id, state: "NV", visitDate: "2024-08-01", note: "new", city: null });
+    expect(await getVisit(db(), ME, id)).toEqual({ id, state: "NV", visitDate: "2024-08-01", note: "new", city: null, story: "" });
   });
 
   test("deleting removes only that visit and gives back its state", async () => {
@@ -96,5 +97,24 @@ describe("loading trips", () => {
     expect(trip).toMatchObject({ name: "Four Corners", startDate: "2027-03-01", endDate: "2027-03-03" });
     expect([...trip.states].sort()).toEqual(["AZ", "UT"]);
     expect(trip.cities).toEqual([{ name: "Moab", state: "UT" }]);
+  });
+});
+
+describe("a visit's story (slice 17)", () => {
+  test("is saved, and comes back with the visit", async () => {
+    const id = await addVisit(db(), ME, { state: "CO", visitDate: "2024-07-04", note: "Red Rocks", city: null });
+    expect(await setVisitStory(db(), ME, id, "Day one.\nDay two.")).toBe(true);
+    expect(await getVisit(db(), ME, id)).toMatchObject({ id, note: "Red Rocks", story: "Day one.\nDay two." });
+  });
+
+  test("editing the visit (state, date, city, note) keeps its story", async () => {
+    const id = await addVisit(db(), ME, { state: "CO", visitDate: "2024-07-04", note: "", city: null });
+    await setVisitStory(db(), ME, id, "Keep me");
+    await updateVisit(db(), ME, id, { state: "UT", visitDate: "2024-07-05", note: "moved", city: null });
+    expect(await getVisit(db(), ME, id)).toMatchObject({ state: "UT", story: "Keep me" });
+  });
+
+  test("an unknown visit gives false", async () => {
+    expect(await setVisitStory(db(), ME, 999, "nothing")).toBe(false);
   });
 });

@@ -1,0 +1,69 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { connection } from "next/server";
+import { removeVisit } from "@/app/(app)/visits/actions";
+import { EditDeleteActions } from "@/components/edit-delete-actions";
+import { StateSkeleton } from "@/components/loading-skeletons";
+import { PageBody, PageTitle } from "@/components/page-title";
+import { StoryEditor } from "@/components/story-editor";
+import { appDatabase } from "@/db/app";
+import { getVisit } from "@/db/queries";
+import { requireUserId } from "@/lib/auth/server";
+import { STATE_NAMES } from "@/lib/data/states";
+
+export const metadata: Metadata = { title: "Visit" };
+
+// One visit's own page: its details, Edit and Delete, and its story.
+export default function VisitPage({ params }: PageProps<"/visits/[id]">) {
+  return (
+    <PageBody narrow>
+      <Suspense fallback={<StateSkeleton />}>
+        <VisitContent params={params} />
+      </Suspense>
+    </PageBody>
+  );
+}
+
+/** Everything about the visit, read fresh; someone else's or an unknown visit is "Not found". */
+async function VisitContent({ params }: Pick<PageProps<"/visits/[id]">, "params">) {
+  await connection();
+  const userId = await requireUserId(); // only this person's visits
+  const id = Number((await params).id);
+  const visit = Number.isInteger(id) ? await getVisit(await appDatabase(), userId, id) : null;
+  if (!visit) notFound();
+  const stateName = STATE_NAMES[visit.state];
+
+  return (
+    <>
+      <p>
+        <Link href={`/states/${visit.state}`} className="text-sm text-muted-foreground hover:underline">
+          ← {stateName}
+        </Link>
+      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <PageTitle>Visit to {stateName}</PageTitle>
+          <p className="text-muted-foreground tabular-nums">
+            {visit.visitDate}
+            {visit.city && ` · ${visit.city}`}
+          </p>
+        </div>
+        <EditDeleteActions
+          editHref={`/visits/${visit.id}/edit`}
+          question="Delete this visit?"
+          details={`The visit on ${visit.visitDate} in ${stateName} will be gone for good.`}
+          deleteAction={removeVisit.bind(null, visit.id)}
+        />
+      </div>
+      {visit.note && <p>{visit.note}</p>}
+      <section aria-labelledby="story-heading" className="flex flex-col gap-3 border-t pt-6">
+        <h2 id="story-heading" className="text-lg font-semibold">
+          Story
+        </h2>
+        <StoryEditor visitId={visit.id} story={visit.story} />
+      </section>
+    </>
+  );
+}

@@ -76,7 +76,10 @@ async function StateDetails({ code }: { code: string }) {
             {visits.map((visit) => (
               <li key={visit.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2">
                 <span>
-                  <span className="font-medium tabular-nums">{visit.visitDate}</span>
+                  {/* The date opens the visit's own page (details and story). */}
+                  <Link href={`/visits/${visit.id}`} className="font-medium tabular-nums underline-offset-4 hover:underline">
+                    {visit.visitDate}
+                  </Link>
                   {visit.city && <> · {visit.city}</>}
                   {visit.note && <span className="text-muted-foreground"> · {visit.note}</span>}
                 </span>
