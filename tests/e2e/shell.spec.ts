@@ -8,8 +8,11 @@
 // the light/dark switch switches twice (back to where it started).
 // Slice 22c: the double-click test proves both switches happened, and the
 // switch still works after the theme was changed elsewhere (another tab).
+// Slice 22d: the fade-watching code is shared (fades.ts), and the switch
+// still works when a fade fails to start.
 import { expect, test, type Page } from "@playwright/test";
 import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from "./helpers";
+import { readFades, recordFades } from "./fades";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
 import { visitedStateCount } from "@/db/queries";
 
@@ -216,108 +219,72 @@ test.describe("light and dark", () => {
     await expect.poll(background).not.toBe(before);
   });
 
+  /** True when the page is in the dark theme. */
+  const isDark = async (page: Page) => ((await page.locator("html").getAttribute("class")) ?? "").includes("dark");
+
   test("switching fades softly from one theme to the other (about 0.3 s)", async ({ page }) => {
-    // Count the browser's page fades ("view transitions") and note how long they take.
-    await page.addInitScript(() => {
-      const start = document.startViewTransition?.bind(document);
-      if (!start) return;
-      const record = window as unknown as { fades: number; fadeDurations: number[] };
-      record.fades = 0;
-      document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
-        record.fades += 1;
-        const transition = start(update);
-        transition.ready.then(() => {
-          record.fadeDurations = document
-            .getAnimations()
-            .filter((animation) => (animation.effect as KeyframeEffect | null)?.pseudoElement?.startsWith("::view-transition"))
-            .map((animation) => Number(animation.effect!.getTiming().duration));
-        });
-        return transition;
-      }) as typeof document.startViewTransition;
-    });
+    await recordFades(page);
     await page.goto("/map");
-    const html = page.locator("html");
-    const startedDark = ((await html.getAttribute("class")) ?? "").includes("dark");
+    const started = await isDark(page);
     await themeButton(page).click();
-    await expect(html).toHaveClass(startedDark ? /^(?!.*\bdark\b)/ : /\bdark\b/);
-    expect(await page.evaluate(() => (window as unknown as { fades: number }).fades)).toBe(1);
-    const durations = await page.waitForFunction(() => (window as unknown as { fadeDurations?: number[] }).fadeDurations);
-    const values = (await durations.jsonValue()) as number[];
-    expect(values.length).toBeGreaterThan(0);
-    for (const duration of values) expect(duration).toBe(300);
+    await expect.poll(() => isDark(page)).toBe(!started);
+    await expect.poll(async () => (await readFades(page)).finished).toBe(1);
+    const { fades, durations } = await readFades(page);
+    expect(fades).toBe(1);
+    expect(durations.length).toBeGreaterThan(0);
+    for (const duration of durations) expect(duration).toBe(300);
   });
 
   test("a quick double-click switches twice, ending on the theme it started with", async ({ page }) => {
-    // Count the fades (one per click that reached the switch) and how many have finished.
-    await page.addInitScript(() => {
-      const record = window as unknown as { fades: number; finished: number };
-      Object.assign(record, { fades: 0, finished: 0 });
-      const start = document.startViewTransition?.bind(document);
-      if (start) {
-        document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
-          record.fades += 1;
-          const transition = start(update);
-          transition.finished.finally(() => (record.finished += 1)).catch(() => {});
-          return transition;
-        }) as typeof document.startViewTransition;
-      }
-    });
+    await recordFades(page);
     await page.goto("/map");
-    const html = page.locator("html");
-    const started = ((await html.getAttribute("class")) ?? "").includes("dark") ? "dark" : "light";
-    const record = () =>
-      page.evaluate(() => {
-        const { fades, finished } = window as unknown as { fades: number; finished: number };
-        return { fades, finished };
-      });
+    const started = await isDark(page);
     await themeButton(page).dblclick(); // two clicks, well inside the 0.3 s fade
     // Both clicks reached the switch (each started a fade), and both fades are
     // over. (The second click comes before the first fade applies its change,
     // so both apply the final pick: no flash of the other theme in between.)
-    await expect.poll(async () => (await record()).finished).toBe(2);
-    expect((await record()).fades).toBe(2);
-    await expect(html).toHaveClass(started === "dark" ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+    await expect.poll(async () => (await readFades(page)).finished).toBe(2);
+    expect((await readFades(page)).fades).toBe(2);
+    expect(await isDark(page)).toBe(started);
     await page.reload(); // and that's the choice that's remembered
-    await expect(html).toHaveClass(started === "dark" ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+    await expect.poll(() => isDark(page)).toBe(started);
   });
 
   test("after a double-click, a theme change in another tab doesn't confuse the switch", async ({ page }) => {
+    await recordFades(page);
     await page.goto("/map");
-    const html = page.locator("html");
-    const isDark = async () => ((await html.getAttribute("class")) ?? "").includes("dark");
-    const started = await isDark();
+    const started = await isDark(page);
     await themeButton(page).dblclick(); // back where it started
-    await expect.poll(isDark).toBe(started);
-    await page.waitForTimeout(500); // the fades are over
+    await expect.poll(async () => (await readFades(page)).finished).toBe(2); // both fades are over
     // Another tab of the app switches the theme; next-themes tells this tab.
     const otherTab = await page.context().newPage();
     await otherTab.goto("/map");
     await themeButton(otherTab).click();
-    await expect.poll(isDark).toBe(!started);
+    await expect.poll(() => isDark(page)).toBe(!started);
     // One click here switches back (it doesn't use the double-click's old pick).
     await themeButton(page).click();
-    await expect.poll(isDark).toBe(started);
+    await expect.poll(() => isDark(page)).toBe(started);
+  });
+
+  test("if a fade can't start, the theme still switches, and the switch keeps working", async ({ page }) => {
+    await recordFades(page, { failFirst: true });
+    await page.goto("/map");
+    const started = await isDark(page);
+    await themeButton(page).click(); // the fade fails to start
+    await expect.poll(() => isDark(page)).toBe(!started);
+    await themeButton(page).click(); // the next one fades normally
+    await expect.poll(() => isDark(page)).toBe(started);
+    await expect.poll(async () => (await readFades(page)).finished).toBe(1);
   });
 
   test("with reduced motion turned on, it switches at once (no fade)", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.addInitScript(() => {
-      const record = window as unknown as { fades: number };
-      record.fades = 0;
-      const start = document.startViewTransition?.bind(document);
-      if (start) {
-        document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
-          record.fades += 1;
-          return start(update);
-        }) as typeof document.startViewTransition;
-      }
-    });
+    await recordFades(page);
     await page.goto("/map");
-    const html = page.locator("html");
-    const startedDark = ((await html.getAttribute("class")) ?? "").includes("dark");
+    const started = await isDark(page);
     await themeButton(page).click();
-    await expect(html).toHaveClass(startedDark ? /^(?!.*\bdark\b)/ : /\bdark\b/);
-    expect(await page.evaluate(() => (window as unknown as { fades: number }).fades)).toBe(0);
+    await expect.poll(() => isDark(page)).toBe(!started);
+    expect((await readFades(page)).fades).toBe(0);
   });
 
   test("without a saved choice, the page follows the device's setting", async ({ browser }) => {
