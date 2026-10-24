@@ -51,12 +51,12 @@ async function stateId(db: Database, code: string): Promise<number> {
 }
 
 export type VisitValues = { state: string; visitDate: string; note: string; city: string | null };
-export type SavedVisit = VisitValues & { id: number };
+export type SavedVisit = VisitValues & { id: number; story: string };
 
 /** My visits to one state, newest first; on the same day, the one added later first. */
 export async function visitsForState(db: Database, userId: string, code: string): Promise<SavedVisit[]> {
   return db
-    .select({ id: visits.id, state: states.code, visitDate: visits.visitDate, note: visits.note, city: visits.city })
+    .select({ id: visits.id, state: states.code, visitDate: visits.visitDate, note: visits.note, city: visits.city, story: visits.story })
     .from(visits)
     .innerJoin(states, eq(states.id, visits.stateId))
     .where(and(eq(states.code, code.toUpperCase()), eq(visits.userId, userId)))
@@ -75,7 +75,7 @@ export async function addVisit(db: Database, userId: string, visit: VisitValues)
 /** One of my visits, or null if I have no visit with that id. */
 export async function getVisit(db: Database, userId: string, id: number): Promise<SavedVisit | null> {
   const [row] = await db
-    .select({ id: visits.id, state: states.code, visitDate: visits.visitDate, note: visits.note, city: visits.city })
+    .select({ id: visits.id, state: states.code, visitDate: visits.visitDate, note: visits.note, city: visits.city, story: visits.story })
     .from(visits)
     .innerJoin(states, eq(states.id, visits.stateId))
     .where(and(eq(visits.id, id), eq(visits.userId, userId)));
@@ -87,6 +87,16 @@ export async function updateVisit(db: Database, userId: string, id: number, visi
   const changed = await db
     .update(visits)
     .set({ stateId: await stateId(db, visit.state), visitDate: visit.visitDate, note: visit.note, city: visit.city })
+    .where(and(eq(visits.id, id), eq(visits.userId, userId)))
+    .returning({ id: visits.id });
+  return changed.length > 0;
+}
+
+/** Save (or clear, with "") the story of one of my visits. False if I have no visit with that id. */
+export async function setVisitStory(db: Database, userId: string, id: number, story: string): Promise<boolean> {
+  const changed = await db
+    .update(visits)
+    .set({ story })
     .where(and(eq(visits.id, id), eq(visits.userId, userId)))
     .returning({ id: visits.id });
   return changed.length > 0;

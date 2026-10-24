@@ -62,7 +62,9 @@ No other packages without asking me first.
 
 - The 50 states use their real official names and two-letter codes
   (e.g. California, CA). Washington, D.C. is not included.
-- A visit has: state, visit date, a short note, and optionally a city.
+- A visit has: state, visit date, a short note, and optionally a city and a
+  story (up to 5,000 characters). Each visit has its own page (`/visits/<id>`)
+  where the story is written; the quick add-visit form stays short.
 - A planned trip has: a name, start date, end date, one or more states,
   and optionally cities.
 - Cities come from the public-domain US Census Gazetteer files (carried over

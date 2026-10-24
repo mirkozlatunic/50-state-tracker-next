@@ -60,7 +60,7 @@ describe("the backup file", () => {
     await writeBackup(db(), ME, file);
     const columns = async (table: string) => (await readBackup(`PRAGMA table_info(${table})`)).map((row) => row.name);
     expect(await columns("states")).toEqual(["id", "code", "name"]);
-    expect(await columns("visits")).toEqual(["id", "state_id", "visit_date", "note", "city", "user_id"]);
+    expect(await columns("visits")).toEqual(["id", "state_id", "visit_date", "note", "city", "user_id", "story"]);
     expect(await columns("trips")).toEqual(["id", "name", "start_date", "end_date", "user_id"]);
     expect(await columns("trip_states")).toEqual(["trip_id", "state_id"]);
     expect(await columns("trip_cities")).toEqual(["trip_id", "state_id", "city"]);

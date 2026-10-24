@@ -23,6 +23,7 @@ export const visits = sqliteTable("visits", {
   note: text("note").notNull().default(""),
   city: text("city"), // optional; official spelling from the city list
   userId: text("user_id").notNull().default(""), // whose visit it is (their Clerk id)
+  story: text("story").notNull().default(""), // the longer, optional text on the visit page
 });
 
 export const trips = sqliteTable(

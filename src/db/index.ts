@@ -18,13 +18,14 @@ export function openDatabase(config: DatabaseConfig) {
 
 export type Database = ReturnType<typeof openDatabase>;
 
-/** Add the user_id column to a table from before accounts (slice 13), if it's
- * missing. Its rows get "" (nobody's) until they're given to someone.
- * PRAGMA table_info lists a table's columns. */
-async function addUserColumn(db: Database, table: "visits" | "trips") {
+/** Add a text column to a table from an older version of the app, if it's
+ * missing; its existing rows get "". (PRAGMA table_info lists a table's columns.)
+ * user_id came with accounts (slice 13): old rows belong to nobody until given
+ * to someone. story came with visit pages (slice 17). */
+async function addTextColumn(db: Database, table: "visits" | "trips", column: "user_id" | "story") {
   const columns = (await db.$client.execute(`PRAGMA table_info(${table})`)).rows.map((row) => row.name);
-  if (!columns.includes("user_id")) {
-    await db.$client.execute(`ALTER TABLE ${table} ADD COLUMN user_id TEXT NOT NULL DEFAULT ''`);
+  if (!columns.includes(column)) {
+    await db.$client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} TEXT NOT NULL DEFAULT ''`);
   }
 }
 
@@ -34,8 +35,9 @@ async function addUserColumn(db: Database, table: "visits" | "trips") {
 export async function setupDatabase(db: Database) {
   const schemaSql = readFileSync(join(process.cwd(), "src/db/schema.sql"), "utf8");
   await db.$client.executeMultiple(schemaSql);
-  await addUserColumn(db, "visits");
-  await addUserColumn(db, "trips");
+  await addTextColumn(db, "visits", "user_id");
+  await addTextColumn(db, "trips", "user_id");
+  await addTextColumn(db, "visits", "story");
   // An "index" lets the database find one person's rows without reading every row.
   await db.$client.executeMultiple(`
     CREATE INDEX IF NOT EXISTS visits_user ON visits (user_id);

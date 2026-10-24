@@ -6,10 +6,11 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { appDatabase } from "@/db/app";
-import { addVisit, deleteVisit, getVisit, updateVisit } from "@/db/queries";
+import { addVisit, deleteVisit, getVisit, setVisitStory, updateVisit } from "@/db/queries";
 import { requireUserId } from "@/lib/auth/server";
 import { todayIn } from "@/lib/dates";
 import { checkVisitForm, type VisitFormValues } from "@/lib/visit-form";
+import { checkStory } from "@/lib/visit-story";
 
 export type VisitFormState = { errors: string[]; values: VisitFormValues | null };
 
@@ -37,4 +38,19 @@ export async function removeVisit(visitId: number): Promise<void> {
   const state = await deleteVisit(await appDatabase(), userId, visitId);
   refresh();
   redirect(state ? `/states/${state}` : "/states");
+}
+
+export type StoryFormResult = { ok: true } | { ok: false; error: string };
+
+/** Save (or clear) a visit's story from its visit page. OK: the page shows it
+ * again; too long or not my visit: the reason, and nothing changes. */
+export async function saveStory(visitId: number, form: FormData): Promise<StoryFormResult> {
+  const userId = await requireUserId();
+  const result = checkStory(form);
+  if (!result.ok) return { ok: false, error: result.error };
+  if (!(await setVisitStory(await appDatabase(), userId, visitId, result.story))) {
+    return { ok: false, error: "This visit doesn't exist anymore." };
+  }
+  refresh(); // show the saved story on the page
+  return { ok: true };
 }

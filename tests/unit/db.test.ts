@@ -43,9 +43,9 @@ describe("setting up the database", () => {
     expect(await db.$count(visits)).toBe(1);
   });
 
-  test("the tables have the Flask app's columns, plus whose each visit and trip is", async () => {
+  test("the tables have the Flask app's columns, plus whose each visit and trip is (and a visit's story)", async () => {
     expect(await columns("states")).toEqual(["id", "code", "name"]);
-    expect(await columns("visits")).toEqual(["id", "state_id", "visit_date", "note", "city", "user_id"]);
+    expect(await columns("visits")).toEqual(["id", "state_id", "visit_date", "note", "city", "user_id", "story"]);
     expect(await columns("trips")).toEqual(["id", "name", "start_date", "end_date", "user_id"]);
     expect(await columns("trip_states")).toEqual(["trip_id", "state_id"]);
     expect(await columns("trip_cities")).toEqual(["trip_id", "state_id", "city"]);
@@ -77,10 +77,11 @@ describe("an older database without people (slice 13)", () => {
     const oldColumns = async (table: string) =>
       (await old.$client.execute(`PRAGMA table_info(${table})`)).rows.map((row) => row.name);
     expect(await oldColumns("visits")).toContain("user_id");
+    expect(await oldColumns("visits")).toContain("story"); // slice 17
     expect(await oldColumns("trips")).toContain("user_id");
     // The old rows belong to nobody yet (""), until they're given to someone.
-    expect((await old.$client.execute("SELECT note, user_id FROM visits")).rows.map((row) => ({ ...row }))).toEqual([
-      { note: "Red Rocks", user_id: "" },
+    expect((await old.$client.execute("SELECT note, user_id, story FROM visits")).rows.map((row) => ({ ...row }))).toEqual([
+      { note: "Red Rocks", user_id: "", story: "" },
     ]);
     expect((await old.$client.execute("SELECT name, user_id FROM trips")).rows.map((row) => ({ ...row }))).toEqual([
       { name: "Ski", user_id: "" },
