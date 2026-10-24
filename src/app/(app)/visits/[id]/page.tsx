@@ -7,15 +7,16 @@ import { removeVisit } from "@/app/(app)/visits/actions";
 import { EditDeleteActions } from "@/components/edit-delete-actions";
 import { StateSkeleton } from "@/components/loading-skeletons";
 import { PageBody, PageTitle } from "@/components/page-title";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { StoryEditor } from "@/components/story-editor";
 import { appDatabase } from "@/db/app";
-import { getVisit } from "@/db/queries";
+import { getVisit, photosForVisit } from "@/db/queries";
 import { requireUserId } from "@/lib/auth/server";
 import { STATE_NAMES } from "@/lib/data/states";
 
 export const metadata: Metadata = { title: "Visit" };
 
-// One visit's own page: its details, Edit and Delete, and its story.
+// One visit's own page: its details, Edit and Delete, its photos and its story.
 export default function VisitPage({ params }: PageProps<"/visits/[id]">) {
   return (
     <PageBody narrow>
@@ -31,8 +32,10 @@ async function VisitContent({ params }: Pick<PageProps<"/visits/[id]">, "params"
   await connection();
   const userId = await requireUserId(); // only this person's visits
   const id = Number((await params).id);
-  const visit = Number.isInteger(id) ? await getVisit(await appDatabase(), userId, id) : null;
+  const db = await appDatabase();
+  const visit = Number.isInteger(id) ? await getVisit(db, userId, id) : null;
   if (!visit) notFound();
+  const photos = await photosForVisit(db, userId, visit.id);
   const stateName = STATE_NAMES[visit.state];
 
   return (
@@ -58,6 +61,12 @@ async function VisitContent({ params }: Pick<PageProps<"/visits/[id]">, "params"
         />
       </div>
       {visit.note && <p>{visit.note}</p>}
+      <section aria-labelledby="photos-heading" className="flex flex-col gap-3 border-t pt-6">
+        <h2 id="photos-heading" className="text-lg font-semibold">
+          Photos
+        </h2>
+        <PhotoGallery visitId={visit.id} photos={photos.map(({ id, width, height }) => ({ id, width, height }))} />
+      </section>
       <section aria-labelledby="story-heading" className="flex flex-col gap-3 border-t pt-6">
         <h2 id="story-heading" className="text-lg font-semibold">
           Story

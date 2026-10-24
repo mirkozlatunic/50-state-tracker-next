@@ -6,8 +6,9 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { appDatabase } from "@/db/app";
-import { addVisit, deleteVisit, getVisit, setVisitStory, updateVisit } from "@/db/queries";
+import { addVisit, deletePhoto, deleteVisit, getVisit, photoPathsForVisit, setVisitStory, updateVisit } from "@/db/queries";
 import { requireUserId } from "@/lib/auth/server";
+import { photoStore } from "@/lib/photo-store";
 import { todayIn } from "@/lib/dates";
 import { checkVisitForm, type VisitFormValues } from "@/lib/visit-form";
 import { checkStory } from "@/lib/visit-story";
@@ -32,10 +33,13 @@ export async function saveVisit(visitId: number | null, _previous: VisitFormStat
   redirect(`/states/${result.visit.state}`);
 }
 
-/** Delete a visit and go back to its state's page. */
+/** Delete a visit (its photos too) and go back to its state's page. */
 export async function removeVisit(visitId: number): Promise<void> {
   const userId = await requireUserId();
-  const state = await deleteVisit(await appDatabase(), userId, visitId);
+  const db = await appDatabase();
+  const photoFiles = await photoPathsForVisit(db, userId, visitId); // before the rows are gone
+  const state = await deleteVisit(db, userId, visitId);
+  if (state) await photoStore().delete(photoFiles);
   refresh();
   redirect(state ? `/states/${state}` : "/states");
 }
@@ -53,4 +57,12 @@ export async function saveStory(visitId: number, form: FormData): Promise<StoryF
   }
   refresh(); // show the saved story on the page
   return { ok: true };
+}
+
+/** Delete one of my photos: its row, and its files in the photo store. */
+export async function removePhoto(photoId: number): Promise<void> {
+  const userId = await requireUserId();
+  const files = await deletePhoto(await appDatabase(), userId, photoId);
+  if (files) await photoStore().delete(files);
+  refresh();
 }

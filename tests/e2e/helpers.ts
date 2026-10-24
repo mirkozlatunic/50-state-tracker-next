@@ -7,6 +7,8 @@ import { openDatabase, setupDatabase } from "@/db";
 
 // The test app's own database. Made up for the tests only: the real data is never used here.
 export const TEST_DB_URL = `file:${join(tmpdir(), "50-state-tracker-e2e.sqlite")}`;
+// The test app's photos go to a local folder, never the real (Vercel Blob) store.
+export const TEST_PHOTO_DIR = join(tmpdir(), "50-state-tracker-e2e-photos");
 
 // Two made-up Clerk test people. "+clerk_test" addresses never get real email;
 // in Clerk's development app their sign-in code is always 424242.
@@ -79,7 +81,10 @@ export async function openTestDatabase() {
 /** Remove everyone's visits and trips, so each test starts from an empty tracker. */
 export async function resetData() {
   const db = await openTestDatabase();
-  await db.$client.batch(["DELETE FROM trip_cities", "DELETE FROM trip_states", "DELETE FROM trips", "DELETE FROM visits"], "write");
+  await db.$client.batch(
+    ["DELETE FROM visit_photos", "DELETE FROM trip_cities", "DELETE FROM trip_states", "DELETE FROM trips", "DELETE FROM visits"],
+    "write",
+  );
   db.$client.close();
 }
 

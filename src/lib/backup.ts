@@ -18,6 +18,8 @@ const TABLES = [
   { table: "trips", where: "WHERE user_id = ?", mine: true },
   { table: "trip_states", where: `WHERE trip_id IN (${MY_TRIPS})`, mine: true },
   { table: "trip_cities", where: `WHERE trip_id IN (${MY_TRIPS})`, mine: true },
+  // Where my photos are in the photo store; the pictures themselves are too big for the file.
+  { table: "visit_photos", where: "WHERE user_id = ?", mine: true },
 ];
 
 /** The download's name, e.g. "tracker-2026-10-22.sqlite". */

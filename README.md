@@ -68,6 +68,15 @@ visits and trips.
    (or from before accounts) have no owner yet (`user_id` is empty) and show
    up for nobody until they're given to someone.
 
+## Photos
+
+A visit can have up to 6 photos. Online they're in the private Vercel Blob
+store `tracker-photos` (connected to Preview and Production; its key is the
+`BLOB_READ_WRITE_TOKEN` setting Vercel added). On the computer (`pnpm dev`) and
+in the tests they're saved in a local folder instead (`.photos/`, which git
+ignores), so nothing touches the real store. The backup lists where your photos
+are, but not the pictures themselves.
+
 ## Logo and icons
 
 The logo is the rope-ring badge, kept unchanged in `docs/brand/logo-source.png`.

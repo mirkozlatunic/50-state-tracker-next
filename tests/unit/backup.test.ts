@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createClient } from "@libsql/client";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { addTrip, addVisit } from "@/db/queries";
+import { addPhoto, addTrip, addVisit } from "@/db/queries";
 import { backupFileName, writeBackup } from "@/lib/backup";
 import { ME, OTHER, withTestDatabase } from "./db-helpers";
 
@@ -54,6 +54,15 @@ describe("the backup file", () => {
     const id = await addTrip(db(), ME, { name: "Weekend", startDate: "2027-03-01", endDate: "2027-03-02", states: ["VT"], cities: [] });
     await writeBackup(db(), ME, file);
     expect(await readBackup("SELECT trip_id FROM trip_states")).toEqual([{ trip_id: id }]);
+  });
+
+  test("lists my photos (where they are, not the pictures themselves), nobody else's", async () => {
+    const mine = await addVisit(db(), ME, { state: "CO", visitDate: "2024-07-04", note: "", city: null });
+    const theirs = await addVisit(db(), OTHER, { state: "UT", visitDate: "2024-07-05", note: "", city: null });
+    await addPhoto(db(), ME, mine, { fullPath: "photos/me/full.jpg", thumbPath: "photos/me/thumb.jpg", width: 10, height: 10 });
+    await addPhoto(db(), OTHER, theirs, { fullPath: "photos/other/full.jpg", thumbPath: "photos/other/thumb.jpg", width: 10, height: 10 });
+    await writeBackup(db(), ME, file);
+    expect(await readBackup("SELECT full_path FROM visit_photos")).toEqual([{ full_path: "photos/me/full.jpg" }]);
   });
 
   test("has the Flask app's tables and columns, plus whose each visit and trip is", async () => {

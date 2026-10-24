@@ -59,3 +59,16 @@ export const tripCities = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.tripId, table.stateId, table.city] })],
 );
+
+// A visit's photos (slice 18): where the photo and its preview are in the photo
+// store, whose they are, and their size. Deleting a visit deletes its photos.
+export const visitPhotos = sqliteTable("visit_photos", {
+  id: integer("id").primaryKey(),
+  visitId: integer("visit_id").notNull().references(() => visits.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  fullPath: text("full_path").notNull(),
+  thumbPath: text("thumb_path").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
