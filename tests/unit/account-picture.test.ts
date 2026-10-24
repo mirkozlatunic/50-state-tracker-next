@@ -3,6 +3,7 @@
 // Slice 22b: while Clerk is loading it shows an empty circle (no icon that
 // then flips to the photo), and the picture comes from Clerk already at the
 // button's size (no Vercel resizing).
+// Slice 22c: a broken picture address shows the icon instead of crashing the header.
 import { describe, expect, test } from "vitest";
 import { accountButtonLook } from "@/lib/account-picture";
 
@@ -20,6 +21,11 @@ describe("the account button's look", () => {
   test("a picture address that already has options keeps them", () => {
     const look = accountButtonLook(true, { hasImage: true, imageUrl: "https://img.clerk.com/abc?v=2" });
     expect(new URL((look as { src: string }).src).searchParams.get("v")).toBe("2");
+  });
+
+  test("a picture address that isn't a full web address falls back to the icon (no crash)", () => {
+    expect(accountButtonLook(true, { hasImage: true, imageUrl: "" })).toEqual({ kind: "icon" });
+    expect(accountButtonLook(true, { hasImage: true, imageUrl: "/avatar.png" })).toEqual({ kind: "icon" });
   });
 
   test("without a picture (Clerk's made-up default isn't used): the person icon", () => {

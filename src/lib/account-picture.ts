@@ -19,7 +19,15 @@ export function accountButtonLook(
 ): AccountButtonLook {
   if (!isLoaded) return { kind: "loading" };
   if (!user?.hasImage) return { kind: "icon" };
-  const src = new URL(user.imageUrl);
+  // `new URL` throws on an empty or partial address; catch it, so a broken
+  // picture shows the icon instead of taking the whole header down (slice 22c).
+  // (try/catch rather than URL.canParse, which older iPhones don't have.)
+  let src: URL;
+  try {
+    src = new URL(user.imageUrl);
+  } catch {
+    return { kind: "icon" };
+  }
   src.searchParams.set("width", String(PICTURE_PIXELS));
   src.searchParams.set("height", String(PICTURE_PIXELS));
   src.searchParams.set("fit", "crop");

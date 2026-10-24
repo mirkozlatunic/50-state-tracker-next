@@ -6,6 +6,8 @@
 // button shows your profile picture, and light/dark fades softly.
 // Slice 22b: the tooltip appears without a wait, and a quick double-click on
 // the light/dark switch switches twice (back to where it started).
+// Slice 22c: the double-click test proves both switches happened, and the
+// switch still works after the theme was changed elsewhere (another tab).
 import { expect, test, type Page } from "@playwright/test";
 import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from "./helpers";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
@@ -246,14 +248,55 @@ test.describe("light and dark", () => {
   });
 
   test("a quick double-click switches twice, ending on the theme it started with", async ({ page }) => {
+    // Count the fades (one per click that reached the switch) and how many have finished.
+    await page.addInitScript(() => {
+      const record = window as unknown as { fades: number; finished: number };
+      Object.assign(record, { fades: 0, finished: 0 });
+      const start = document.startViewTransition?.bind(document);
+      if (start) {
+        document.startViewTransition = ((update: ViewTransitionUpdateCallback) => {
+          record.fades += 1;
+          const transition = start(update);
+          transition.finished.finally(() => (record.finished += 1)).catch(() => {});
+          return transition;
+        }) as typeof document.startViewTransition;
+      }
+    });
     await page.goto("/map");
     const html = page.locator("html");
-    const startedDark = ((await html.getAttribute("class")) ?? "").includes("dark");
+    const started = ((await html.getAttribute("class")) ?? "").includes("dark") ? "dark" : "light";
+    const record = () =>
+      page.evaluate(() => {
+        const { fades, finished } = window as unknown as { fades: number; finished: number };
+        return { fades, finished };
+      });
     await themeButton(page).dblclick(); // two clicks, well inside the 0.3 s fade
-    await page.waitForTimeout(600); // let both fades finish
-    await expect(html).toHaveClass(startedDark ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+    // Both clicks reached the switch (each started a fade), and both fades are
+    // over. (The second click comes before the first fade applies its change,
+    // so both apply the final pick: no flash of the other theme in between.)
+    await expect.poll(async () => (await record()).finished).toBe(2);
+    expect((await record()).fades).toBe(2);
+    await expect(html).toHaveClass(started === "dark" ? /\bdark\b/ : /^(?!.*\bdark\b)/);
     await page.reload(); // and that's the choice that's remembered
-    await expect(html).toHaveClass(startedDark ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+    await expect(html).toHaveClass(started === "dark" ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+  });
+
+  test("after a double-click, a theme change in another tab doesn't confuse the switch", async ({ page }) => {
+    await page.goto("/map");
+    const html = page.locator("html");
+    const isDark = async () => ((await html.getAttribute("class")) ?? "").includes("dark");
+    const started = await isDark();
+    await themeButton(page).dblclick(); // back where it started
+    await expect.poll(isDark).toBe(started);
+    await page.waitForTimeout(500); // the fades are over
+    // Another tab of the app switches the theme; next-themes tells this tab.
+    const otherTab = await page.context().newPage();
+    await otherTab.goto("/map");
+    await themeButton(otherTab).click();
+    await expect.poll(isDark).toBe(!started);
+    // One click here switches back (it doesn't use the double-click's old pick).
+    await themeButton(page).click();
+    await expect.poll(isDark).toBe(started);
   });
 
   test("with reduced motion turned on, it switches at once (no fade)", async ({ page }) => {
