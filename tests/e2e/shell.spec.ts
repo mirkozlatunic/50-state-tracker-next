@@ -4,6 +4,8 @@
 // and Download backup and Log out moved from the footer into its menu.
 // Slice 22: the logo shows its name as a tooltip instead of text, the account
 // button shows your profile picture, and light/dark fades softly.
+// Slice 22b: the tooltip appears without a wait, and a quick double-click on
+// the light/dark switch switches twice (back to where it started).
 import { expect, test, type Page } from "@playwright/test";
 import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from "./helpers";
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
@@ -91,6 +93,12 @@ test.describe("the logo's name", () => {
     test.skip(isPhone(info.project.name), "no mouse on a phone");
     await logo(page).hover();
     await expect(page.locator(TOOLTIP)).toHaveText("50 States Tracker");
+  });
+
+  test("appears right away, not after Base UI's usual 0.6 s wait", async ({ page }, info) => {
+    test.skip(isPhone(info.project.name), "no mouse on a phone");
+    await logo(page).hover();
+    await expect(page.locator(TOOLTIP)).toBeVisible({ timeout: 400 });
   });
 
   test("shows as a tooltip when the logo is reached with the keyboard", async ({ page }, info) => {
@@ -235,6 +243,17 @@ test.describe("light and dark", () => {
     const values = (await durations.jsonValue()) as number[];
     expect(values.length).toBeGreaterThan(0);
     for (const duration of values) expect(duration).toBe(300);
+  });
+
+  test("a quick double-click switches twice, ending on the theme it started with", async ({ page }) => {
+    await page.goto("/map");
+    const html = page.locator("html");
+    const startedDark = ((await html.getAttribute("class")) ?? "").includes("dark");
+    await themeButton(page).dblclick(); // two clicks, well inside the 0.3 s fade
+    await page.waitForTimeout(600); // let both fades finish
+    await expect(html).toHaveClass(startedDark ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+    await page.reload(); // and that's the choice that's remembered
+    await expect(html).toHaveClass(startedDark ? /\bdark\b/ : /^(?!.*\bdark\b)/);
   });
 
   test("with reduced motion turned on, it switches at once (no fade)", async ({ page }) => {

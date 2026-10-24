@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "cn";
-import { accountPicture } from "@/lib/account-picture";
+import { accountButtonLook } from "@/lib/account-picture";
 import { isCurrent, LINKS } from "@/lib/nav-links";
 
 // On touch screens every item is at least 44px tall, big enough for a finger.
@@ -30,7 +30,8 @@ export function NavMenu({ phone = false, pathname = "", className }: { phone?: b
   const clerk = useClerk();
   // useUser gives the signed-in person; their profile picture (e.g. from
   // Google) replaces the person icon on the computer's Account button.
-  const picture = accountPicture(useUser().user);
+  const { isLoaded, user } = useUser();
+  const look = accountButtonLook(isLoaded, user);
   return (
     <DropdownMenu>
       {/* Both versions are on the page; CSS shows the one that fits the screen. */}
@@ -46,8 +47,13 @@ export function NavMenu({ phone = false, pathname = "", className }: { phone?: b
       >
         {phone ? (
           <Menu aria-hidden />
-        ) : picture ? (
-          <Image src={picture} alt="" width={28} height={28} sizes="28px" className="size-7 rounded-full object-cover" />
+        ) : look.kind === "loading" ? (
+          // An empty circle the size of the picture, until we know which to show.
+          <span aria-hidden className="size-7 rounded-full bg-muted" />
+        ) : look.kind === "picture" ? (
+          // unoptimized: Clerk already sent it at the right size, so next/image
+          // shows it as it is instead of sending it through Vercel's resizer.
+          <Image src={look.src} alt="" width={28} height={28} unoptimized className="size-7 rounded-full object-cover" />
         ) : (
           <CircleUser aria-hidden />
         )}

@@ -8,7 +8,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { AnimatedNav } from "@/components/ui/animated-nav";
 import { buttonVariants } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BrandLogo } from "./brand-logo";
 import { MainNav, NavLinks } from "./main-nav";
 import { NavMenu } from "./nav-menu";
@@ -22,22 +22,25 @@ export function SiteHeader() {
       {/* The badge logo, cut to a circle. Its name shows as a tooltip when the
           mouse is over it or the keyboard reaches it; screen readers read the
           link's aria-label. `render` makes the tooltip's trigger this link
-          instead of a button of its own. */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Link
-              href="/map"
-              aria-label="50 States Tracker"
-              data-slot="button"
-              className={buttonVariants({ variant: "ghost", size: "icon", className: "pointer-coarse:min-w-11" })}
-            />
-          }
-        >
-          <BrandLogo pixels={28} />
-        </TooltipTrigger>
-        <TooltipContent side="bottom">50 States Tracker</TooltipContent>
-      </Tooltip>
+          instead of a button of its own. TooltipProvider (delay 0) shows it
+          right away instead of after Base UI's usual 0.6 s. */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Link
+                href="/map"
+                aria-label="50 States Tracker"
+                data-slot="button"
+                className={buttonVariants({ variant: "ghost", size: "icon" })}
+              />
+            }
+          >
+            <BrandLogo pixels={28} />
+          </TooltipTrigger>
+          <TooltipContent side="bottom">50 States Tracker</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <Suspense fallback={<NavLinks pathname="" />}>
         <MainNav />
       </Suspense>
