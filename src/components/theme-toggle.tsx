@@ -8,7 +8,7 @@
 // in globals.css). Browsers without them, or with "reduce motion" turned on,
 // switch at once as before.
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { flushSync } from "react-dom";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -18,19 +18,17 @@ type Theme = "light" | "dark";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  // The theme you last picked, until next-themes has it. A fade applies the
+  // The theme you last picked, while its fade is running. A fade applies the
   // change a frame after the click, so a quick second click would otherwise
-  // still see the old theme and pick the same one again (slice 22b). And the
-  // browser may run two fades' changes in either order, so each one applies
-  // this latest pick rather than its own. A ref keeps the value between clicks
-  // without redrawing; it's only read in the click and the fades.
+  // still see the old theme and pick the same one again (slice 22b). Each fade
+  // applies this latest pick rather than its own, so a double-click ends on
+  // the right theme. Refs keep values between clicks without redrawing;
+  // they're only read in the click and the fades.
   const switchingTo = useRef<Theme | null>(null);
-
-  // Once next-themes reports the picked theme, it's done: forget the pick.
-  // (Changing a ref here is fine; only setState in an effect is a problem.)
-  useEffect(() => {
-    if (resolvedTheme === switchingTo.current) switchingTo.current = null;
-  }, [resolvedTheme]);
+  // How many fades are still running. When the last one ends, the pick is
+  // forgotten, so the next click starts from the theme next-themes reports,
+  // even if another tab changed it in the meantime (slice 22c).
+  const fadesRunning = useRef(0);
 
   /** Switch to the other theme, with the fade where it's possible and wanted.
    * `button` is the switch itself (to find its place on the screen). */
@@ -43,6 +41,7 @@ export function ThemeToggle() {
       return;
     }
     switchingTo.current = next;
+    fadesRunning.current += 1;
     const transition = document.startViewTransition(() => {
       const pick = switchingTo.current;
       if (!pick) return; // an earlier fade already applied the latest pick
@@ -62,15 +61,26 @@ export function ThemeToggle() {
 
     // While a fade runs, the browser sends every click to the page itself
     // (<html>), not to the button under the mouse. So for that time, a click
-    // on the page that lands where the button is counts as a click on it.
-    const box = button.getBoundingClientRect();
+    // on the page that lands where the button is (measured at that click, in
+    // case the page moved) counts as a click on it.
     const clickDuringFade = (event: MouseEvent) => {
+      const box = button.getBoundingClientRect();
       const onButton =
         event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
       if (event.target === document.documentElement && onButton) switchTheme(button);
     };
     document.addEventListener("click", clickDuringFade);
-    transition.finished.finally(() => document.removeEventListener("click", clickDuringFade));
+
+    // When this fade is over (finished, cancelled by a newer one, or failed):
+    // stop listening, and if it was the last one running, forget the pick.
+    // The .catch keeps an error inside the fade from being reported twice.
+    transition.finished
+      .finally(() => {
+        document.removeEventListener("click", clickDuringFade);
+        fadesRunning.current -= 1;
+        if (fadesRunning.current === 0) switchingTo.current = null;
+      })
+      .catch(() => {});
   }
 
   return (

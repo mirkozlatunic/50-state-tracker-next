@@ -53,6 +53,9 @@ export function NavMenu({ phone = false, pathname = "", className }: { phone?: b
         ) : look.kind === "picture" ? (
           // unoptimized: Clerk already sent it at the right size, so next/image
           // shows it as it is instead of sending it through Vercel's resizer.
+          // It must stay: without it, next/image only loads pictures from
+          // servers listed in next.config.ts (images.remotePatterns), and
+          // img.clerk.com was removed from there on purpose (slice 22b).
           <Image src={look.src} alt="" width={28} height={28} unoptimized className="size-7 rounded-full object-cover" />
         ) : (
           <CircleUser aria-hidden />
