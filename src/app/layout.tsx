@@ -52,6 +52,15 @@ const CLERK_APPEARANCE = {
     borderRadius: "var(--radius)",
     fontFamily: "var(--font-geist-sans)",
   },
+  // Clerk's own extras that the app's cards don't have: drop shadows, a grey
+  // footer and a shaded button. These Tailwind classes make the form flat like
+  // the rest of the app (the "!" wins over Clerk's styles).
+  elements: {
+    cardBox: "rounded-xl border border-border shadow-none!",
+    card: "bg-card shadow-none!",
+    footer: "bg-card! bg-none!",
+    formButtonPrimary: "bg-none! shadow-none! after:hidden! hover:bg-primary/90",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -66,7 +75,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {/* ClerkProvider lets every page know who's signed in. Its forms use the
             app's own colors (CSS variables), so they follow light and dark too. */}
-        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/sign-in" appearance={CLERK_APPEARANCE}>
+        {/* After signing in or up from the landing page you land on the map. Pages
+            that sent you to sign in still bring you back to themselves. */}
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/map"
+          signUpFallbackRedirectUrl="/map"
+          afterSignOutUrl="/sign-in"
+          appearance={CLERK_APPEARANCE}
+        >
           <ThemeProvider>{children}</ThemeProvider>
         </ClerkProvider>
       </body>

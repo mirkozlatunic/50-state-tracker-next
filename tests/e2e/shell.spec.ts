@@ -7,9 +7,10 @@ import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from 
 import { expectAtLeastTall, expectCentersLineUp, expectContentCentered } from "./layout-helpers";
 import { visitedStateCount } from "@/db/queries";
 
+// Slice 21: the map comes first.
 const NAV = [
-  ["States", "/states"],
   ["Map", "/map"],
+  ["States", "/states"],
   ["Add visit", "/visits/new"],
   ["Trips", "/trips"],
   ["Years", "/years"],
@@ -27,8 +28,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("the header", () => {
-  test("has the app's name, linking home", async ({ page }) => {
-    await expect(header(page).getByRole("link", { name: "50 States Tracker" })).toHaveAttribute("href", "/");
+  test("has the app's name, linking to the map", async ({ page }) => {
+    await expect(header(page).getByRole("link", { name: "50 States Tracker" })).toHaveAttribute("href", "/map");
   });
 
   test("shows the badge logo, loaded and cut to a circle", async ({ page }) => {

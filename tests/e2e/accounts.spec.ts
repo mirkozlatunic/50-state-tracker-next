@@ -30,6 +30,25 @@ test.describe("signed out", () => {
     }
   });
 
+  test("the sign-in form uses the app's card colors, in light and dark", async ({ page }) => {
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto("/sign-in");
+      await expect(page.getByLabel("Email address")).toBeVisible();
+      // The app's card color, read from a test element using bg-card.
+      const cardColor = await page.evaluate(() => {
+        const probe = document.createElement("div");
+        probe.className = "bg-card";
+        document.body.append(probe);
+        return getComputedStyle(probe).backgroundColor;
+      });
+      for (const part of [".cl-card", ".cl-footer"]) {
+        const color = await page.locator(part).first().evaluate((element) => getComputedStyle(element).backgroundColor);
+        expect(color, `${scheme} ${part}`).toBe(cardColor);
+      }
+    }
+  });
+
   test("there's a sign-up page for new people", async ({ page }) => {
     await page.goto("/sign-up");
     await expect(page).toHaveTitle("Sign up · 50 States Tracker");
@@ -54,6 +73,18 @@ test("signing in with an email code, through the real form", async ({ page }) =>
   await page.getByRole("textbox", { name: /verification code/i }).pressSequentially("424242");
   await expect(page).toHaveURL("/states", { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "States", level: 1 })).toBeVisible();
+});
+
+test("from the landing page, Start tracking and the real sign-in form end on the map", async ({ page }) => {
+  await setupClerkTestingToken({ page });
+  await page.goto("/");
+  await page.getByRole("link", { name: "Start tracking" }).click();
+  await page.getByLabel("Email address").fill(USER_A_EMAIL);
+  const codeSent = page.waitForResponse((response) => response.url().includes("prepare_first_factor") && response.ok());
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await codeSent;
+  await page.getByRole("textbox", { name: /verification code/i }).pressSequentially("424242");
+  await expect(page).toHaveURL("/map", { timeout: 15_000 });
 });
 
 test.describe("each person has their own tracker", () => {

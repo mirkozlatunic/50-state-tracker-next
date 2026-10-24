@@ -1,7 +1,7 @@
 "use client";
 // One city dot over the map: a small round button. Clicking it (or hovering
 // with a mouse) opens a shadcn Popover with the city's visits and trips, and a
-// link to its state. A tap works the same on the iPhone.
+// link to its state (unless `linked` is false). A tap works the same on the iPhone.
 
 import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -14,6 +14,7 @@ export function CityDot({
   stateName,
   left,
   top,
+  linked = true,
 }: {
   label: string;
   kind: "visited" | "upcoming";
@@ -22,6 +23,7 @@ export function CityDot({
   stateName: string;
   left: string;
   top: string;
+  linked?: boolean;
 }) {
   return (
     <Popover>
@@ -40,9 +42,11 @@ export function CityDot({
       />
       <PopoverContent side="top" className="w-64">
         <p>{details}</p>
-        <Link href={`/states/${stateCode}`} className="font-medium hover:underline">
-          Open {stateName} →
-        </Link>
+        {linked && (
+          <Link href={`/states/${stateCode}`} className="font-medium hover:underline">
+            Open {stateName} →
+          </Link>
+        )}
       </PopoverContent>
     </Popover>
   );

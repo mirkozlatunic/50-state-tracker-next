@@ -18,6 +18,11 @@ export default clerkMiddleware(
     // auth.protect() sends a signed-out visitor to /sign-in, remembering this page.
     if (!isPublicPath(pathname) && !serverAction) await auth.protect();
 
+    // The landing page ("/") is for signed-out visitors; signed in, you go
+    // straight to your map. Done here, before the page is drawn, so it's a real
+    // redirect (inside a streaming page, redirect() only adds a late <meta> one).
+    if (pathname === "/" && (await auth()).userId) return NextResponse.redirect(new URL("/map", request.url));
+
     const path = checkStatePath(pathname);
     if (path.kind === "redirect") return NextResponse.redirect(new URL(path.to, request.url));
     // An address no page answers: Next.js shows the not-found page with a 404.

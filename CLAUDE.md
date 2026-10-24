@@ -117,12 +117,17 @@ No other packages without asking me first.
   navy; every text color passes 4.5 : 1 contrast (tests/unit/palette.test.ts).
 - Every city in the city list must land inside its own state's outline.
 - Signed out, every page goes to /sign-in (and back afterwards), except
-  sign-in, sign-up, the styles, icons and manifest. The old /login goes to /sign-in.
+  the landing page (`/`), sign-in, sign-up, shared maps, the styles, icons and
+  manifest. The old /login goes to /sign-in.
 - Every page and form action checks who's signed in itself (requireUserId),
   not only proxy.ts.
-- The home page (`/`) shows the heading, a "Start tracking" button, my map
-  (states only, no city dots) and my numbers: 50 states, visited, remaining.
-- Milestones at 10, 25 and 50 visited states: shown on the home page (reached
+- The landing page (`/`) is for signed-out visitors: the heading, a "Start
+  tracking" button (to /sign-in) and a sample dashboard with made-up data
+  (src/lib/demo-data.ts, marked "Sample data", no links into the app).
+  Signed in, `/` goes to `/map`, the first page; the nav order is Map,
+  States, Add visit, Trips, Years.
+- The map page shows my numbers (50 states, visited, remaining) at the top.
+- Milestones at 10, 25 and 50 visited states: shown on the map page (reached
   ones gold with a check mark, the next one "N to go"), and celebrated once
   with a card on the state page when a saved visit reaches one. Only the
   highest milestone celebrated is stored (user_settings); deleting visits below

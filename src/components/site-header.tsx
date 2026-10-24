@@ -20,7 +20,7 @@ export function SiteHeader() {
     <AnimatedNav>
       {/* The badge logo, cut to a circle; the name also shows on wide screens. */}
       <Link
-        href="/"
+        href="/map"
         aria-label="50 States Tracker"
         data-slot="button"
         className={buttonVariants({ variant: "ghost", className: "pointer-coarse:min-w-11" })}
