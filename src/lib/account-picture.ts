@@ -28,6 +28,9 @@ export function accountButtonLook(
   } catch {
     return { kind: "icon" };
   }
+  // Only a normal https address can take Clerk's size options; anything else
+  // (data:, blob:, http:) would end up broken, so show the icon (slice 22d).
+  if (src.protocol !== "https:") return { kind: "icon" };
   src.searchParams.set("width", String(PICTURE_PIXELS));
   src.searchParams.set("height", String(PICTURE_PIXELS));
   src.searchParams.set("fit", "crop");
