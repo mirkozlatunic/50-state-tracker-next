@@ -1,8 +1,15 @@
 "use client"
+// shadcn's tooltip (added with `shadcn add tooltip`), built on Base UI: a small
+// label that pops up when the mouse is over an element or the keyboard
+// reaches it. Tooltips are visual only; the element itself still needs an
+// aria-label for screen readers. Used for the header logo's name (slice 22).
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 import { cn } from "cn"
 
+/** Shares settings between the tooltips inside it. Its `delay` (0 here) is how
+ * long the mouse rests on an element before the tooltip shows; Base UI's own
+ * default, without a provider, is 0.6 s. */
 function TooltipProvider({
   delay = 0,
   ...props
@@ -16,14 +23,20 @@ function TooltipProvider({
   )
 }
 
+/** One tooltip: holds its trigger and its content, and whether it's open. */
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
+/** The element the tooltip belongs to. By default a button; pass `render`
+ * (e.g. a <Link>) to use another element instead. */
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 
+/** The label itself. A "Portal" draws it at the end of the page, so nothing
+ * around the trigger can clip it; the "Positioner" places it next to the
+ * trigger (`side`, `align`, and the gaps `sideOffset` / `alignOffset`). */
 function TooltipContent({
   className,
   side = "top",

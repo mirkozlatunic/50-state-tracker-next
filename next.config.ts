@@ -14,11 +14,6 @@ const nextConfig: NextConfig = {
     "/*": ["src/lib/data/us_cities.csv", "src/db/schema.sql"],
   },
   partialPrefetching: true,
-  // Profile pictures (e.g. from Google) come from Clerk's image server; next/image
-  // only resizes pictures from servers listed here.
-  images: {
-    remotePatterns: [new URL("https://img.clerk.com/**")],
-  },
   turbopack: {
     rules: {
       "*.css": {
