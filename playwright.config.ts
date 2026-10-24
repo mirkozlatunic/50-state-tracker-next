@@ -5,7 +5,7 @@
 // runs online.
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
-import { TEST_DB_URL } from "./tests/e2e/helpers";
+import { TEST_DB_URL, TEST_PHOTO_DIR } from "./tests/e2e/helpers";
 
 // The Clerk keys: from .env.local on the computer, from GitHub's secrets on GitHub.
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
@@ -31,8 +31,9 @@ export default defineConfig({
     command: BUILT ? `pnpm exec next start --port ${PORT}` : `pnpm exec next dev --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: false,
-    // The test app gets its own database (the Clerk keys come from .env.local or GitHub).
-    env: { DATABASE_URL: TEST_DB_URL },
+    // The test app gets its own database and photo folder (the Clerk keys come
+    // from .env.local or GitHub). PHOTO_STORE=local: never the real Blob store.
+    env: { DATABASE_URL: TEST_DB_URL, PHOTO_STORE: "local", PHOTO_DIR: TEST_PHOTO_DIR },
     timeout: 120_000,
   },
 });

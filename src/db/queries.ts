@@ -7,9 +7,10 @@
 
 import { and, asc, countDistinct, desc, eq, exists, inArray, sql } from "drizzle-orm";
 import type { Trip, Visit } from "@/lib/progress";
+import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
 import type { TripCity } from "@/lib/rules";
 import type { Database } from "./index";
-import { states, tripCities, trips, tripStates, visits } from "./schema";
+import { states, tripCities, trips, tripStates, visitPhotos, visits } from "./schema";
 
 /** How many different states have at least one of my visits (the "X of 50" counter). */
 export async function visitedStateCount(db: Database, userId: string): Promise<number> {
@@ -218,4 +219,70 @@ export async function deleteTrip(db: Database, userId: string, id: number): Prom
     .where(and(eq(trips.id, id), eq(trips.userId, userId)))
     .returning({ id: trips.id });
   return deleted.length > 0;
+}
+
+// ---- A visit's photos (slice 18). The files are in the photo store; these
+// rows say where, and whose. Every function only touches my photos.
+
+export type PhotoValues = { fullPath: string; thumbPath: string; width: number; height: number };
+export type SavedPhoto = PhotoValues & { id: number; visitId: number };
+
+const photoColumns = {
+  id: visitPhotos.id,
+  visitId: visitPhotos.visitId,
+  fullPath: visitPhotos.fullPath,
+  thumbPath: visitPhotos.thumbPath,
+  width: visitPhotos.width,
+  height: visitPhotos.height,
+};
+
+/** Add a photo to one of my visits. Its id; "full" if the visit already has
+ * the most photos it can; null if I have no visit with that id. */
+export async function addPhoto(db: Database, userId: string, visitId: number, photo: PhotoValues): Promise<number | "full" | null> {
+  if (!(await getVisit(db, userId, visitId))) return null;
+  if ((await photosForVisit(db, userId, visitId)).length >= PHOTO_MAX_PER_VISIT) return "full";
+  const [row] = await db.insert(visitPhotos).values({ visitId, userId, ...photo }).returning({ id: visitPhotos.id });
+  return row.id;
+}
+
+/** My photos of one visit, oldest first. */
+export async function photosForVisit(db: Database, userId: string, visitId: number): Promise<SavedPhoto[]> {
+  return db
+    .select(photoColumns)
+    .from(visitPhotos)
+    .where(and(eq(visitPhotos.visitId, visitId), eq(visitPhotos.userId, userId)))
+    .orderBy(asc(visitPhotos.id));
+}
+
+/** One of my photos, or null. */
+export async function getPhoto(db: Database, userId: string, id: number): Promise<SavedPhoto | null> {
+  const [row] = await db
+    .select(photoColumns)
+    .from(visitPhotos)
+    .where(and(eq(visitPhotos.id, id), eq(visitPhotos.userId, userId)));
+  return row ?? null;
+}
+
+/** Delete one of my photos. Its two files, to remove from the photo store; null if I had no such photo. */
+export async function deletePhoto(db: Database, userId: string, id: number): Promise<string[] | null> {
+  const photo = await getPhoto(db, userId, id);
+  if (!photo) return null;
+  await db.delete(visitPhotos).where(and(eq(visitPhotos.id, id), eq(visitPhotos.userId, userId)));
+  return [photo.fullPath, photo.thumbPath];
+}
+
+/** The files of all my photos of one visit (to remove from the store when the visit is deleted). */
+export async function photoPathsForVisit(db: Database, userId: string, visitId: number): Promise<string[]> {
+  return (await photosForVisit(db, userId, visitId)).flatMap((photo) => [photo.fullPath, photo.thumbPath]);
+}
+
+/** How many photos each of these visits of mine has (visits without photos are left out). */
+export async function photoCounts(db: Database, userId: string, visitIds: number[]): Promise<Map<number, number>> {
+  if (visitIds.length === 0) return new Map();
+  const rows = await db
+    .select({ visitId: visitPhotos.visitId, count: sql<number>`count(*)` })
+    .from(visitPhotos)
+    .where(and(inArray(visitPhotos.visitId, visitIds), eq(visitPhotos.userId, userId)))
+    .groupBy(visitPhotos.visitId);
+  return new Map(rows.map((row) => [row.visitId, Number(row.count)]));
 }

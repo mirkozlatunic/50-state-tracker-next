@@ -9,7 +9,7 @@ import { removeVisit } from "@/app/(app)/visits/actions";
 import { EditDeleteActions } from "@/components/edit-delete-actions";
 import { appDatabase } from "@/db/app";
 import { requireUserId } from "@/lib/auth/server";
-import { loadTrips, visitsForState } from "@/db/queries";
+import { loadTrips, photoCounts, visitsForState } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { STATES, STATE_NAMES } from "@/lib/data/states";
 import { upcomingTrips } from "@/lib/progress";
@@ -63,6 +63,7 @@ async function StateDetails({ code }: { code: string }) {
   const userId = await requireUserId(); // only this person's visits and trips
   const db = await appDatabase();
   const visits = await visitsForState(db, userId, code);
+  const photos = await photoCounts(db, userId, visits.map((visit) => visit.id));
   const trips = upcomingTrips(await loadTrips(db, userId), todayIn()).filter((trip) => trip.states.includes(code));
 
   return (
@@ -82,6 +83,12 @@ async function StateDetails({ code }: { code: string }) {
                   </Link>
                   {visit.city && <> · {visit.city}</>}
                   {visit.note && <span className="text-muted-foreground"> · {visit.note}</span>}
+                  {photos.has(visit.id) && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {photos.get(visit.id)} {photos.get(visit.id) === 1 ? "photo" : "photos"}
+                    </span>
+                  )}
                 </span>
                 <EditDeleteActions
                   editHref={`/visits/${visit.id}/edit`}

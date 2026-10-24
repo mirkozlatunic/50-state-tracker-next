@@ -34,6 +34,8 @@ describe("needs signing in", () => {
     "/sign-inx", // only /sign-in itself and the pages under it are open
     "/icons", // the folder's files are open, not other addresses that start the same way
     "/setup", // the old "set a password" page is gone
+    "/photos/1", // photos are private (slice 18)
+    "/api/visits/1/photos",
   ])("%s", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });

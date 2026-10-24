@@ -24,7 +24,7 @@ when you use them. Prefer simple, readable code over clever code.
 Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui (Base UI),
 lucide-react, next-themes, drizzle-orm + drizzle-kit, @libsql/client (Turso
 online, a local SQLite file in development and tests), Server Actions + zod,
-Clerk (@clerk/nextjs; @clerk/testing for the browser tests), motion, @dnd-kit,
+Clerk (@clerk/nextjs; @clerk/testing for the browser tests), @vercel/blob, motion, @dnd-kit,
 Vitest, Playwright. Hosted on Vercel.
 No other packages without asking me first.
 
@@ -65,6 +65,13 @@ No other packages without asking me first.
 - A visit has: state, visit date, a short note, and optionally a city and a
   story (up to 5,000 characters). Each visit has its own page (`/visits/<id>`)
   where the story is written; the quick add-visit form stays short.
+- A visit can have up to 6 photos (visit page). The browser shrinks each to at
+  most 2000 px (which drops its Exif/location data) and makes a 400 px preview.
+  Photos live in the private Vercel Blob store `tracker-photos` (Preview and
+  Production); only their owner can see them, through `/photos/<id>`. On the
+  computer and in tests they go to a local folder (`.photos`, or PHOTO_DIR with
+  PHOTO_STORE=local). Deleting a visit deletes its photos. Hobby plan: 1 GB,
+  2,000 uploads a month; past a limit Blob stops for 30 days (no charge).
 - A planned trip has: a name, start date, end date, one or more states,
   and optionally cities.
 - Cities come from the public-domain US Census Gazetteer files (carried over

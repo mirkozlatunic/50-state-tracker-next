@@ -49,3 +49,6 @@ next-env.d.ts
 *.sqlite
 *.sqlite-*
 *.db
+
+# Photos saved on this computer (pnpm dev); online they are in the Blob store.
+/.photos/

@@ -45,5 +45,19 @@ CREATE TABLE IF NOT EXISTS trip_cities (
     PRIMARY KEY (trip_id, state_id, city)
 );
 
+-- A visit's photos (slice 18): where the photo and its small preview are in the
+-- photo store, whose they are, and their size. Deleting a visit deletes its rows.
+CREATE TABLE IF NOT EXISTS visit_photos (
+    id         INTEGER PRIMARY KEY,
+    visit_id   INTEGER NOT NULL REFERENCES visits(id) ON DELETE CASCADE,
+    user_id    TEXT NOT NULL,
+    full_path  TEXT NOT NULL,
+    thumb_path TEXT NOT NULL,
+    width      INTEGER NOT NULL,
+    height     INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS visit_photos_visit ON visit_photos (visit_id);
+
 -- Signing in is Clerk's job now, so the old wrong-password table goes.
 DROP TABLE IF EXISTS login_failures;
