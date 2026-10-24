@@ -42,7 +42,7 @@ itself feel complicated.
 - **Backup:** the backup file would list the photos' addresses; the photos
   themselves are too big for it.
 
-## Phase 3: Milestones and sharing
+## Phase 3: Milestones and sharing (milestones done: slice 19)
 
 - **Milestones** at 10, 25 and 50 states: a small celebration the moment a
   visit reaches one, and the milestones you've reached on the home page. They

@@ -7,9 +7,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { PageBody, PageTitle } from "@/components/page-title";
 import { removeVisit } from "@/app/(app)/visits/actions";
 import { EditDeleteActions } from "@/components/edit-delete-actions";
+import { MilestoneCard } from "@/components/milestone-card";
 import { appDatabase } from "@/db/app";
 import { requireUserId } from "@/lib/auth/server";
-import { loadTrips, photoCounts, visitsForState } from "@/db/queries";
+import { celebratedMilestone, loadTrips, photoCounts, visitedStateCount, visitsForState } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { STATES, STATE_NAMES } from "@/lib/data/states";
 import { upcomingTrips } from "@/lib/progress";
@@ -24,11 +25,11 @@ export async function generateMetadata({ params }: PageProps<"/states/[code]">):
 }
 
 // One state: its visits (newest first) and the upcoming trips that include it.
-export default function StatePage({ params }: PageProps<"/states/[code]">) {
+export default function StatePage({ params, searchParams }: PageProps<"/states/[code]">) {
   return (
     <PageBody>
       <Suspense fallback={<StateSkeleton />}>
-        <StateContent params={params} />
+        <StateContent params={params} searchParams={searchParams} />
       </Suspense>
       <p>
         <Link href="/states" className="text-sm text-muted-foreground hover:underline">
@@ -40,8 +41,9 @@ export default function StatePage({ params }: PageProps<"/states/[code]">) {
 }
 
 /** The heading and details, once the address (/states/CA) is known. */
-async function StateContent({ params }: Pick<PageProps<"/states/[code]">, "params">) {
+async function StateContent({ params, searchParams }: Pick<PageProps<"/states/[code]">, "params" | "searchParams">) {
   const { code } = await params;
+  const milestone = Number((await searchParams).milestone ?? 0);
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -52,22 +54,29 @@ async function StateContent({ params }: Pick<PageProps<"/states/[code]">, "param
           Add a visit
         </Link>
       </div>
-      <StateDetails code={code} />
+      <StateDetails code={code} milestone={milestone} />
     </>
   );
 }
 
 /** The visits and trips, read fresh from the database on every visit. */
-async function StateDetails({ code }: { code: string }) {
+/** `milestone`: from ?milestone=10 after saving a visit; shown only if it's
+ * really the one just celebrated (typing it into the address does nothing). */
+async function StateDetails({ code, milestone }: { code: string; milestone: number }) {
   await connection();
   const userId = await requireUserId(); // only this person's visits and trips
   const db = await appDatabase();
   const visits = await visitsForState(db, userId, code);
+  const celebrate =
+    milestone > 0 &&
+    milestone === (await celebratedMilestone(db, userId)) &&
+    (await visitedStateCount(db, userId)) >= milestone;
   const photos = await photoCounts(db, userId, visits.map((visit) => visit.id));
   const trips = upcomingTrips(await loadTrips(db, userId), todayIn()).filter((trip) => trip.states.includes(code));
 
   return (
     <>
+      {celebrate && <MilestoneCard milestone={milestone} />}
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">Visits</h2>
         {visits.length === 0 ? (

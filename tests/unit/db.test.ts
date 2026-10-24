@@ -51,6 +51,10 @@ describe("setting up the database", () => {
     expect(await columns("trip_cities")).toEqual(["trip_id", "state_id", "city"]);
   });
 
+  test("each person's settings have their own table (slice 19)", async () => {
+    expect(await columns("user_settings")).toEqual(["user_id", "celebrated"]);
+  });
+
   test("a visit's photos have their own table (slice 18)", async () => {
     expect(await columns("visit_photos")).toEqual(["id", "visit_id", "user_id", "full_path", "thumb_path", "width", "height", "created_at"]);
   });

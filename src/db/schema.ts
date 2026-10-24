@@ -72,3 +72,10 @@ export const visitPhotos = sqliteTable("visit_photos", {
   height: integer("height").notNull(),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
+
+// Each person's settings, one row each (slice 19): the highest milestone
+// already celebrated (0 = none yet).
+export const userSettings = sqliteTable("user_settings", {
+  userId: text("user_id").primaryKey(),
+  celebrated: integer("celebrated").notNull().default(0),
+});

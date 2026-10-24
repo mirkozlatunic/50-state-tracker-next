@@ -59,5 +59,12 @@ CREATE TABLE IF NOT EXISTS visit_photos (
 );
 CREATE INDEX IF NOT EXISTS visit_photos_visit ON visit_photos (visit_id);
 
+-- Each person's settings, one row each (slice 19): the highest milestone
+-- (10, 25 or 50 states) already celebrated, so it's celebrated only once.
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id    TEXT PRIMARY KEY,
+    celebrated INTEGER NOT NULL DEFAULT 0
+);
+
 -- Signing in is Clerk's job now, so the old wrong-password table goes.
 DROP TABLE IF EXISTS login_failures;
