@@ -4,6 +4,7 @@
 // then flips to the photo), and the picture comes from Clerk already at the
 // button's size (no Vercel resizing).
 // Slice 22c: a broken picture address shows the icon instead of crashing the header.
+// Slice 22d: and so does one that isn't https (it can't take Clerk's size options).
 import { describe, expect, test } from "vitest";
 import { accountButtonLook } from "@/lib/account-picture";
 
@@ -26,6 +27,12 @@ describe("the account button's look", () => {
   test("a picture address that isn't a full web address falls back to the icon (no crash)", () => {
     expect(accountButtonLook(true, { hasImage: true, imageUrl: "" })).toEqual({ kind: "icon" });
     expect(accountButtonLook(true, { hasImage: true, imageUrl: "/avatar.png" })).toEqual({ kind: "icon" });
+  });
+
+  test("only https picture addresses are used; data:, blob: or http ones show the icon", () => {
+    for (const imageUrl of ["data:image/png;base64,AAAA", "blob:https://img.clerk.com/1", "http://img.clerk.com/abc"]) {
+      expect(accountButtonLook(true, { hasImage: true, imageUrl }), imageUrl).toEqual({ kind: "icon" });
+    }
   });
 
   test("without a picture (Clerk's made-up default isn't used): the person icon", () => {
