@@ -197,3 +197,13 @@ input[type="date"]::-webkit-date-and-time-value {
     background-position: -200% 0;
   }
 }
+
+/* Slice 22: switching light/dark cross-fades the whole page over 0.3 s
+   (ThemeToggle starts a "view transition"; these are the browser's old and new
+   pictures of the page). With "reduce motion" no fade is started at all. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: ease-in-out;
+}
