@@ -7,11 +7,11 @@
 
 import { and, asc, countDistinct, desc, eq, exists, inArray, sql } from "drizzle-orm";
 import type { Trip, Visit } from "@/lib/progress";
-import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
+import { PHOTO_MAX_PER_MONTH, PHOTO_MAX_PER_VISIT } from "@/lib/photos";
 import { isShareId, newShareId } from "@/lib/share";
 import type { TripCity } from "@/lib/rules";
 import type { Database } from "./index";
-import { states, tripCities, trips, tripStates, userSettings, visitPhotos, visits } from "./schema";
+import { photoUploads, states, tripCities, trips, tripStates, userSettings, visitPhotos, visits } from "./schema";
 
 /** How many different states have at least one of my visits (the "X of 50" counter). */
 export async function visitedStateCount(db: Database, userId: string): Promise<number> {
@@ -286,6 +286,31 @@ export async function photoCounts(db: Database, userId: string, visitIds: number
     .where(and(inArray(visitPhotos.visitId, visitIds), eq(visitPhotos.userId, userId)))
     .groupBy(visitPhotos.visitId);
   return new Map(rows.map((row) => [row.visitId, Number(row.count)]));
+}
+
+// ---- My photo uploads per month (slice 23), for the monthly limit.
+
+/** How many photos I've uploaded in `month` ("YYYY-MM"). */
+export async function photoUploadsIn(db: Database, userId: string, month: string): Promise<number> {
+  const [row] = await db
+    .select({ count: photoUploads.count })
+    .from(photoUploads)
+    .where(and(eq(photoUploads.userId, userId), eq(photoUploads.month, month)));
+  return row?.count ?? 0;
+}
+
+/** Count one more upload of mine in `month`. "Upsert": add my row for the
+ * month, or add 1 to it if it's there. */
+export async function countPhotoUpload(db: Database, userId: string, month: string): Promise<void> {
+  await db
+    .insert(photoUploads)
+    .values({ userId, month, count: 1 })
+    .onConflictDoUpdate({ target: [photoUploads.userId, photoUploads.month], set: { count: sql`${photoUploads.count} + 1` } });
+}
+
+/** True while I'm under the monthly limit in `month`. */
+export async function canUploadPhoto(db: Database, userId: string, month: string): Promise<boolean> {
+  return (await photoUploadsIn(db, userId, month)) < PHOTO_MAX_PER_MONTH;
 }
 
 // ---- My settings (slice 19): one row per person, made the first time it's needed.

@@ -1,10 +1,14 @@
 // Slice 18: up to 6 photos per visit, on its visit page. The browser shrinks
 // each photo (at most 2000 px, which also drops its location data) and makes
 // a small preview; only the visit's owner can add, see or delete them.
+// Slice 23: at most 50 photo uploads per person per calendar month.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { addVisit } from "@/db/queries";
-import { logIn, openTestDatabase, resetData, USER_B_EMAIL, userId } from "./helpers";
+import { addVisit, countPhotoUpload, photoUploadsIn } from "@/db/queries";
+import { todayIn } from "@/lib/dates";
+import { PHOTO_MAX_PER_MONTH, photoLimitMessage, uploadMonth } from "@/lib/photos";
+import { logIn, openTestDatabase, resetData, TEST_PHOTO_DIR, USER_B_EMAIL, userId } from "./helpers";
 
 const FIXTURES = join(__dirname, "fixtures");
 const BIG = join(FIXTURES, "big-photo.jpg"); // 2400 x 1600, with an Exif block
@@ -168,4 +172,73 @@ test("the photos fit an iPhone (390px) without sideways scrolling", async ({ pag
   await page.goto(`/visits/${id}`);
   await addPhotos(page, Array(6).fill(SMALL), 6);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test.describe("the monthly limit (slice 23)", () => {
+  const thisMonth = () => uploadMonth(todayIn());
+
+  /** Set how many photos `person` has uploaded this month. */
+  async function setUploads(person: "A" | "B", count: number) {
+    const db = await openTestDatabase();
+    for (let i = 0; i < count; i++) await countPhotoUpload(db, userId(person), thisMonth());
+    db.$client.close();
+  }
+
+  /** How many photos `person` has uploaded this month. */
+  async function uploads(person: "A" | "B") {
+    const db = await openTestDatabase();
+    const count = await photoUploadsIn(db, userId(person), thisMonth());
+    db.$client.close();
+    return count;
+  }
+
+  test("each added photo counts; a refused file doesn't", async ({ page }) => {
+    const id = await saveVisit();
+    await page.goto(`/visits/${id}`);
+    await addPhotos(page, [SMALL], 1);
+    expect(await uploads("A")).toBe(1);
+    await photos(page).getByLabel("Add photos").setInputFiles([NOT_A_PHOTO]);
+    await expect(photos(page).getByRole("alert")).toHaveText("That file isn't a photo.");
+    expect(await uploads("A")).toBe(1);
+  });
+
+  test("past the limit, the photo isn't stored and the page says why", async ({ page }) => {
+    await setUploads("A", PHOTO_MAX_PER_MONTH);
+    const id = await saveVisit();
+    await page.goto(`/visits/${id}`);
+    await photos(page).getByLabel("Add photos").setInputFiles([SMALL]);
+    await expect(photos(page).getByRole("alert")).toHaveText(photoLimitMessage(thisMonth()));
+    await expect(photos(page).getByText("No photos yet.")).toBeVisible();
+    await page.reload();
+    await expect(photos(page).getByText("No photos yet.")).toBeVisible();
+    expect(await uploads("A")).toBe(PHOTO_MAX_PER_MONTH);
+  });
+
+  test("the server refuses it too when sent directly (429), and stores nothing", async ({ page }) => {
+    await setUploads("A", PHOTO_MAX_PER_MONTH);
+    const id = await saveVisit();
+    // The files in this visit's folder (photos/<person>/<visit>/, see photoPathnames).
+    // Visit ids are reused after each test's reset, so compare before and after.
+    const folder = join(TEST_PHOTO_DIR, "photos", userId(), String(id));
+    const files = () => (existsSync(folder) ? readdirSync(folder).sort() : []);
+    const before = files();
+    const photo = { name: "x.jpg", mimeType: "image/jpeg", buffer: readFileSync(SMALL) };
+    const response = await page.request.post(`/api/visits/${id}/photos`, {
+      multipart: { full: photo, thumb: photo, width: "10", height: "10" },
+    });
+    expect(response.status()).toBe(429);
+    expect(await response.json()).toEqual({ error: photoLimitMessage(thisMonth()) });
+    expect(files()).toEqual(before); // no new file
+  });
+
+  test("one person at the limit doesn't block anyone else", async ({ browser }) => {
+    await setUploads("A", PHOTO_MAX_PER_MONTH);
+    const db = await openTestDatabase();
+    const id = await addVisit(db, userId("B"), { state: "UT", visitDate: "2024-07-04", note: "", city: null });
+    db.$client.close();
+    const other = await (await browser.newContext()).newPage();
+    await logIn(other, `/visits/${id}`, USER_B_EMAIL);
+    await addPhotos(other, [SMALL], 1);
+    expect(await uploads("B")).toBe(1);
+  });
 });
