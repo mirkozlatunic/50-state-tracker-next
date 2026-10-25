@@ -71,6 +71,8 @@ No other packages without asking me first.
   computer and in tests they go to a local folder (`.photos`, or PHOTO_DIR with
   PHOTO_STORE=local). Deleting a visit deletes its photos. Hobby plan: 1 GB,
   2,000 uploads a month; past a limit Blob stops for 30 days (no charge).
+  So each person can upload at most 50 photos per calendar month (Los Angeles
+  time); past that, the upload is refused with a clear message.
 - A planned trip has: a name, start date, end date, one or more states,
   and optionally cities.
 - Cities come from the public-domain US Census Gazetteer files (carried over
@@ -107,10 +109,16 @@ No other packages without asking me first.
   must be in one of the trip's states.
 - Every city in the city list must land inside its own state's outline.
 - Signed out, every page goes to /sign-in (and back afterwards), except
-  the landing page (`/`), sign-in, sign-up, shared maps, the styles, icons and
-  manifest. The old /login goes to /sign-in.
+  the landing page (`/`), sign-in, sign-up, shared maps, the privacy page
+  (`/privacy`), the account-deletion webhook (`/api/webhooks/clerk`, which
+  checks Clerk's signature itself), the styles, icons and manifest. The old
+  /login goes to /sign-in.
 - Every page and form action checks who's signed in itself (requireUserId),
   not only proxy.ts.
+- Deleting an account (Manage account → Delete account) deletes everything
+  that person stored here: visits, trips, photos (rows and files), settings,
+  share link and upload counts. Clerk tells the app through a signed webhook;
+  an unsigned or wrongly signed request changes nothing.
 - The landing page (`/`) is for signed-out visitors: the heading, a "Start
   tracking" button (to /sign-in) and a sample dashboard with made-up data
   (src/lib/demo-data.ts, marked "Sample data", no links into the app).
