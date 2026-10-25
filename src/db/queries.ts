@@ -288,6 +288,31 @@ export async function photoCounts(db: Database, userId: string, visitIds: number
   return new Map(rows.map((row) => [row.visitId, Number(row.count)]));
 }
 
+// ---- Deleting an account (slice 24).
+
+/** Delete everything of mine in the database: visits, trips (with their states
+ * and cities), photo rows, settings (with the share link) and upload counts.
+ * One "batch" in "write" mode runs as a transaction: all of it, or none of it.
+ * The photo files are deleted separately (deleteAccount in account-deletion.ts).
+ * An empty id is refused: rows with no owner are nobody's to delete. */
+export async function deleteUserData(db: Database, userId: string): Promise<void> {
+  if (!userId) throw new Error("No user id given");
+  const myTrips = "trip_id IN (SELECT id FROM trips WHERE user_id = ?)";
+  await db.$client.batch(
+    [
+      // The rows that point at a trip or a visit go before the trip or visit itself.
+      `DELETE FROM trip_cities WHERE ${myTrips}`,
+      `DELETE FROM trip_states WHERE ${myTrips}`,
+      "DELETE FROM trips WHERE user_id = ?",
+      "DELETE FROM visit_photos WHERE user_id = ?",
+      "DELETE FROM visits WHERE user_id = ?",
+      "DELETE FROM user_settings WHERE user_id = ?",
+      "DELETE FROM photo_uploads WHERE user_id = ?",
+    ].map((sql) => ({ sql, args: [userId] })),
+    "write",
+  );
+}
+
 // ---- My photo uploads per month (slice 23), for the monthly limit.
 
 /** How many photos I've uploaded in `month` ("YYYY-MM"). */

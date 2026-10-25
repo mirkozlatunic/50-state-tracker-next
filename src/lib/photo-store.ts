@@ -5,7 +5,7 @@
 
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
-import { del, get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 
 export interface PhotoStore {
   /** Save a file under `pathname`. */
@@ -14,6 +14,15 @@ export interface PhotoStore {
   get(pathname: string): Promise<Uint8Array | null>;
   /** Delete these files (files that are already gone are fine). */
   delete(pathnames: string[]): Promise<void>;
+  /** Delete every file in a person's folder, "photos/<id>/" (slice 24; a
+   * folder that isn't there is fine). Anything else is refused. */
+  deleteFolder(folder: string): Promise<void>;
+}
+
+/** Refuse anything but one person's photo folder (see photoFolder in photos.ts),
+ * so a mistake can never delete the whole store. */
+function checkFolder(folder: string) {
+  if (!/^photos\/[A-Za-z0-9_]+\/$/.test(folder)) throw new Error(`Not a photo folder: ${folder}`);
 }
 
 /** Photos in a folder on this computer. */
@@ -42,6 +51,11 @@ export function localPhotoStore(folder: string): PhotoStore {
     async delete(pathnames) {
       await Promise.all(pathnames.map((pathname) => rm(pathOf(pathname), { force: true })));
     },
+    async deleteFolder(folder) {
+      checkFolder(folder);
+      // recursive: the folder and everything in it; force: no error if it's not there.
+      await rm(pathOf(folder), { recursive: true, force: true });
+    },
   };
 }
 
@@ -59,6 +73,19 @@ export function blobPhotoStore(): PhotoStore {
     },
     async delete(pathnames) {
       if (pathnames.length) await del(pathnames);
+    },
+    async deleteFolder(folder) {
+      checkFolder(folder);
+      // Blob has no real folders: list every file whose name starts with the
+      // folder, a page (up to 1,000) at a time, then delete them.
+      const pathnames: string[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await list({ prefix: folder, cursor });
+        pathnames.push(...page.blobs.map((blob) => blob.pathname));
+        cursor = page.hasMore ? page.cursor : undefined;
+      } while (cursor);
+      for (let start = 0; start < pathnames.length; start += 1000) await del(pathnames.slice(start, start + 1000));
     },
   };
 }

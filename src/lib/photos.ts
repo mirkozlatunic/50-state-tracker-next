@@ -1,6 +1,7 @@
 // The rules for a visit's photos (slice 18): what counts as a photo, how big
 // it may be, how many a visit can have, and where each one is stored.
 // Slice 23: how many a person can upload in a month.
+// Slice 24: each person's own folder, so their photos can be deleted all at once.
 
 /** The most photos one visit can have. */
 export const PHOTO_MAX_PER_VISIT = 6;
@@ -55,9 +56,17 @@ export async function checkPhotoFiles(full: File | null, thumb: File | null): Pr
   return null;
 }
 
+/** A person's own folder in the photo store: "photos/<their Clerk id>/". The id
+ * must be letters, digits and "_" (Clerk ids look like "user_2abc..."), so an
+ * empty or odd id can never point at another folder, or at everyone's photos. */
+export function photoFolder(userId: string): string {
+  if (!/^[A-Za-z0-9_]+$/.test(userId)) throw new Error(`Not a user id: ${JSON.stringify(userId)}`);
+  return `photos/${userId}/`;
+}
+
 /** Where a new photo and its preview are stored: in the person's own folder, by
  * visit, under a random name nobody can guess (randomUUID). */
 export function photoPathnames(userId: string, visitId: number): { full: string; thumb: string } {
-  const name = `photos/${userId}/${visitId}/${crypto.randomUUID()}`;
+  const name = `${photoFolder(userId)}${visitId}/${crypto.randomUUID()}`;
   return { full: `${name}-full.jpg`, thumb: `${name}-thumb.jpg` };
 }

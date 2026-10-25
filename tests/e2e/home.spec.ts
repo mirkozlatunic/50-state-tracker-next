@@ -46,10 +46,10 @@ test.describe("signed out: the landing page", () => {
     await expect(map(page).locator("[data-kind]").first()).toBeVisible();
   });
 
-  test("the only ways in are signing in (no links into the private pages)", async ({ page }) => {
+  test("the only ways in are signing in (no links into the private pages; the privacy page is public)", async ({ page }) => {
     await page.goto("/");
     const hrefs = await page.getByRole("link").evaluateAll((links) => links.map((link) => link.getAttribute("href")));
-    for (const href of hrefs) expect(href).toMatch(/^\/(sign-in|sign-up)?$/);
+    for (const href of hrefs) expect(href).toMatch(/^\/(sign-in|sign-up|privacy)?$/);
   });
 
   test("Start tracking opens the sign-in page", async ({ page }) => {

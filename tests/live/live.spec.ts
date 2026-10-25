@@ -35,6 +35,17 @@ test("the landing page opens without signing in and shows sample data", async ({
   await expect(page).toHaveURL(/\/sign-in/);
 });
 
+test("the privacy page opens without signing in", async ({ page }) => {
+  const response = await page.goto(`${LIVE}/privacy`);
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Privacy", level: 1 })).toBeVisible();
+});
+
+test("the account-deletion webhook refuses an unsigned request", async ({ request }) => {
+  const response = await request.post(`${LIVE}/api/webhooks/clerk`, { data: { type: "user.deleted", data: { id: "user_x" } }, maxRedirects: 0 });
+  expect(response.status()).toBe(400);
+});
+
 test("the backup and the city lists are never open to strangers", async ({ request }) => {
   for (const path of ["/backup", "/api/cities/CO"]) {
     const response = await request.get(`${LIVE}${path}`, { maxRedirects: 0 });

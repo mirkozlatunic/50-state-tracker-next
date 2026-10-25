@@ -17,6 +17,8 @@ describe("open without signing in", () => {
     "/logo.png", // the badge on the sign-in page (and next/image fetches it without signing in)
     "/share/abcdefghijklmnopqrstuv", // a shared map (slice 20)
     "/share/abcdefghijklmnopqrstuv/opengraph-image", // its preview picture
+    "/privacy", // slice 24: what's stored and how to delete it
+    "/api/webhooks/clerk", // slice 24: Clerk calls it without signing in; its signature check protects it
   ])("%s", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
@@ -39,6 +41,9 @@ describe("needs signing in", () => {
     "/photos/1", // photos are private (slice 18)
     "/api/visits/1/photos",
     "/sharing", // my own share settings
+    "/api/webhooks", // only Clerk's own webhook address is open
+    "/api/webhooks/other",
+    "/api/webhooks/clerk/x",
   ])("%s", (path) => {
     expect(isPublicPath(path)).toBe(false);
   });
