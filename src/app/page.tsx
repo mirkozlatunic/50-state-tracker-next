@@ -41,6 +41,12 @@ export default function LandingPage() {
       <Suspense fallback={<LandingSkeleton />}>
         <LandingContent />
       </Suspense>
+      {/* Slice 24: a small footer with the privacy page. */}
+      <footer className="mx-auto w-full max-w-5xl px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] text-sm text-muted-foreground">
+        <Link href="/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
+          Privacy
+        </Link>
+      </footer>
     </>
   );
 }

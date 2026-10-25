@@ -63,7 +63,7 @@ test.describe("the header", () => {
   test("on a phone, the menu lists every part of the app, then sharing, backup, account and log out", async ({ page }, info) => {
     test.skip(!isPhone(info.project.name), "phone layout");
     await openNavMenu(page);
-    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Share my map", "Download backup", "Manage account", "Log out"]);
+    await expect(page.getByRole("menuitem")).toHaveText([...NAV.map(([name]) => name), "Share my map", "Download backup", "Manage account", "Privacy", "Log out"]);
     await page.getByRole("menuitem", { name: "Trips" }).click();
     await expect(page).toHaveURL("/trips");
     await expectCurrentPage(page, "Trips");
@@ -129,10 +129,11 @@ test.describe("the account button", () => {
 });
 
 test.describe("the menu at the top", () => {
-  test("has Download backup, Manage account and Log out", async ({ page }) => {
+  test("has Download backup, Manage account, Privacy and Log out", async ({ page }) => {
     await openNavMenu(page);
     await expect(page.getByRole("menuitem", { name: "Download backup" })).toHaveAttribute("href", "/backup");
     await expect(page.getByRole("menuitem", { name: "Manage account" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Privacy" })).toHaveAttribute("href", "/privacy"); // slice 24
     await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
   });
 
