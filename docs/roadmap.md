@@ -4,7 +4,7 @@ Future ideas, written down so they aren't lost. **Plans only: none of this is
 being built until it's asked for separately.** Each phase would follow the usual
 way of working: a plan first, then one slice at a time, tests first.
 
-## Phase 1: Persistent accounts and cross-device progress (mostly done)
+## Phase 1: Persistent accounts and cross-device progress (done, except the production app)
 
 Done in slice 13 (October 2026):
 
@@ -12,6 +12,16 @@ Done in slice 13 (October 2026):
 - Each person's visits and trips live in the Turso database with their Clerk id
   (`user_id`), so the same account sees the same progress on every device.
 - Rows from before accounts have no owner and show up for nobody.
+
+Done in slices 23 and 24 (October 2026):
+
+- **Deleting an account's data**: when someone deletes their Clerk account, a
+  signed Clerk webhook (`/api/webhooks/clerk`) deletes their visits, trips,
+  photos (rows and files), settings, share link and upload counts. A privacy
+  page (`/privacy`) says what's stored and how to delete it.
+- **Protecting the photo store**: sign-ups can be made invite-only in Clerk
+  (Access mode → Invite-only), and each person can upload at most 50 photos a
+  calendar month.
 
 Still open:
 
@@ -21,10 +31,14 @@ Still open:
   don't move from the development app to a production one, so people would
   sign up again; their data in Turso stays, but would need to be linked to the
   new account ids (a one-time script).
-- **Deleting an account's data** when someone deletes their Clerk account
-  (a Clerk webhook that removes their visits and trips).
 
-## Phase 2: Visit memories
+## Phase 2: Visit memories (done: slice 18, with a monthly limit in slice 23)
+
+Built as planned below. Decided along the way: at most 6 photos per visit and
+3 MB per file; the browser shrinks each photo to at most 2000 px (which also
+drops its location data) and makes a 400 px preview; deleting a visit deletes
+its photos; the backup lists where the photos are, not the pictures. Since
+slice 23, each person can upload at most 50 photos a calendar month.
 
 Optional photos and richer memories for a visit, without making the tracker
 itself feel complicated.
@@ -59,3 +73,23 @@ sharing" or "Make a new link"); a reached milestone gets a calm gold card.
   map (made on the server) so it previews nicely in messages.
 - **Decide first:** what exactly a shared page may show, and whether shared
   links expire.
+
+## Also done (October 2026)
+
+- **Slice 21:** a public landing page with sample data; the map is the first page after signing in.
+- **Slices 22–22e:** the Google profile picture on the account button, the logo's name as a tooltip, a soft fade between light and dark, and fixes from four code reviews.
+- **Slice 25:** the README as a showcase, with the setup in `docs/operations.md` and `pnpm screenshots`.
+- **Slice 26:** the design rules moved from CLAUDE.md to `docs/design-rules.md`.
+
+## Still open
+
+- **A Clerk production app** (see Phase 1): our own domain, our own Google
+  OAuth client, and a one-time script linking people's data to their new
+  account ids. The live site still runs on Clerk's development app.
+- **Switching off the Flask site**: it stays up as a fallback until
+  2026-11-05, and switching it off needs an explicit OK.
+- **Photos in the backup**: the backup lists where the photos are, but not the
+  pictures themselves.
+- **A known edge case**: a very fast triple-click on the light/dark switch can
+  switch twice on the third click (found in the slice 22d code review, left
+  out on purpose).

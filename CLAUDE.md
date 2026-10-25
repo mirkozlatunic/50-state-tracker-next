@@ -1,4 +1,5 @@
 @AGENTS.md
+@docs/design-rules.md
 
 # 50 States Vacation Tracker (Next.js)
 
@@ -55,8 +56,6 @@ No other packages without asking me first.
 - Every server component that reads the database calls `await connection()`
   (from next/server) first and sits inside `<Suspense>`; otherwise the build can
   read the data once and freeze it into the page.
-- Buttons, fields, cards and pop-ups come from shadcn (`src/components/ui`).
-  Use its sizes so buttons in a row line up; don't hand-roll button styles.
 
 ## The data
 
@@ -72,6 +71,8 @@ No other packages without asking me first.
   computer and in tests they go to a local folder (`.photos`, or PHOTO_DIR with
   PHOTO_STORE=local). Deleting a visit deletes its photos. Hobby plan: 1 GB,
   2,000 uploads a month; past a limit Blob stops for 30 days (no charge).
+  So each person can upload at most 50 photos per calendar month (Los Angeles
+  time); past that, the upload is refused with a clear message.
 - A planned trip has: a name, start date, end date, one or more states,
   and optionally cities.
 - Cities come from the public-domain US Census Gazetteer files (carried over
@@ -88,7 +89,8 @@ No other packages without asking me first.
 ## Hard rules
 
 - There are exactly 50 states.
-- Anyone can sign up (email code or Google, through Clerk). Each person has
+- Anyone can sign up through Clerk; the ways to sign up and sign in (email
+  code, Google, password, ...) are whatever the Clerk app is set to. Each person has
   their own tracker: they see and change only their own visits and trips,
   and someone else's visit or trip acts as if it didn't exist.
 - A state can have several visits, but it counts only once in my progress.
@@ -103,24 +105,21 @@ No other packages without asking me first.
 - A trip belongs to the year it starts in. Trips that have ended are hidden.
 - Moving a trip to another year keeps its month, day and length
   (Feb 29 becomes Feb 28 in a year without one). The trip rules still apply.
-- Map colors (brand palette): sage = visited, gold = in a trip that hasn't
-  ended (also striped), pale grey-green = neither. Visited wins over planned.
-  Status never relies on color alone (stripes, check marks, words for screen readers).
 - Cities don't change the progress: it still counts states.
 - A city must exist in the city list and be in its state. A trip's cities
   must be in one of the trip's states.
-- City dots: solid navy (light in dark mode) = visited city, hollow with a
-  gold ring = city in a trip that hasn't ended. A city that's both shows the
-  gold ring. One dot per city.
-- Brand palette (src/app/globals.css): navy #16364B, sage #8FA28B, gold
-  #F1B84A, warm off-white #FBFAF7, plus a matching dark theme. Text on gold is
-  navy; every text color passes 4.5 : 1 contrast (tests/unit/palette.test.ts).
 - Every city in the city list must land inside its own state's outline.
 - Signed out, every page goes to /sign-in (and back afterwards), except
-  the landing page (`/`), sign-in, sign-up, shared maps, the styles, icons and
-  manifest. The old /login goes to /sign-in.
+  the landing page (`/`), sign-in, sign-up, shared maps, the privacy page
+  (`/privacy`), the account-deletion webhook (`/api/webhooks/clerk`, which
+  checks Clerk's signature itself), the styles, icons and manifest. The old
+  /login goes to /sign-in.
 - Every page and form action checks who's signed in itself (requireUserId),
   not only proxy.ts.
+- Deleting an account (Manage account → Delete account) deletes everything
+  that person stored here: visits, trips, photos (rows and files), settings,
+  share link and upload counts. Clerk tells the app through a signed webhook;
+  an unsigned or wrongly signed request changes nothing.
 - The landing page (`/`) is for signed-out visitors: the heading, a "Start
   tracking" button (to /sign-in) and a sample dashboard with made-up data
   (src/lib/demo-data.ts, marked "Sample data", no links into the app).
@@ -138,9 +137,6 @@ No other packages without asking me first.
   stories or photos, no links into the app, not listed by search engines. A
   new link replaces the old one at once; "Stop sharing" ends it. Links don't expire.
 - Future ideas are in `docs/roadmap.md`. Don't build any of them without being asked.
-- On phones (640px wide or less), `/map` shows the next trip and the four
-  Census regions as cards instead of the map. Bigger screens keep the map.
-- In every row of buttons, the buttons' vertical centers line up within 1px.
 
 ## Folder and secret rules
 
