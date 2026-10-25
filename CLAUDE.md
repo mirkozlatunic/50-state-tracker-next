@@ -1,4 +1,5 @@
 @AGENTS.md
+@docs/design-rules.md
 
 # 50 States Vacation Tracker (Next.js)
 
@@ -55,8 +56,6 @@ No other packages without asking me first.
 - Every server component that reads the database calls `await connection()`
   (from next/server) first and sits inside `<Suspense>`; otherwise the build can
   read the data once and freeze it into the page.
-- Buttons, fields, cards and pop-ups come from shadcn (`src/components/ui`).
-  Use its sizes so buttons in a row line up; don't hand-roll button styles.
 
 ## The data
 
@@ -103,18 +102,9 @@ No other packages without asking me first.
 - A trip belongs to the year it starts in. Trips that have ended are hidden.
 - Moving a trip to another year keeps its month, day and length
   (Feb 29 becomes Feb 28 in a year without one). The trip rules still apply.
-- Map colors (brand palette): sage = visited, gold = in a trip that hasn't
-  ended (also striped), pale grey-green = neither. Visited wins over planned.
-  Status never relies on color alone (stripes, check marks, words for screen readers).
 - Cities don't change the progress: it still counts states.
 - A city must exist in the city list and be in its state. A trip's cities
   must be in one of the trip's states.
-- City dots: solid navy (light in dark mode) = visited city, hollow with a
-  gold ring = city in a trip that hasn't ended. A city that's both shows the
-  gold ring. One dot per city.
-- Brand palette (src/app/globals.css): navy #16364B, sage #8FA28B, gold
-  #F1B84A, warm off-white #FBFAF7, plus a matching dark theme. Text on gold is
-  navy; every text color passes 4.5 : 1 contrast (tests/unit/palette.test.ts).
 - Every city in the city list must land inside its own state's outline.
 - Signed out, every page goes to /sign-in (and back afterwards), except
   the landing page (`/`), sign-in, sign-up, shared maps, the styles, icons and
@@ -138,9 +128,6 @@ No other packages without asking me first.
   stories or photos, no links into the app, not listed by search engines. A
   new link replaces the old one at once; "Stop sharing" ends it. Links don't expire.
 - Future ideas are in `docs/roadmap.md`. Don't build any of them without being asked.
-- On phones (640px wide or less), `/map` shows the next trip and the four
-  Census regions as cards instead of the map. Bigger screens keep the map.
-- In every row of buttons, the buttons' vertical centers line up within 1px.
 
 ## Folder and secret rules
 
