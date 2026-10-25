@@ -1,14 +1,16 @@
 # Roadmap
 
-Future ideas, written down so they aren't lost. **Plans only: none of this is
-being built until it's asked for separately.** Each phase would follow the usual
-way of working: a plan first, then one slice at a time, tests first.
+Future ideas, written down so they aren't lost, and a record of the ones that
+are done. **The open items are plans only: none of them is built until it's
+asked for separately.** The done items record what was built. Each phase would
+follow the usual way of working: a plan first, then one slice at a time, tests
+first.
 
 ## Phase 1: Persistent accounts and cross-device progress (done, except the production app)
 
 Done in slice 13 (October 2026):
 
-- Sign-in with an email code or Google, through Clerk.
+- Sign-in through Clerk (at the time: an email code or Google).
 - Each person's visits and trips live in the Turso database with their Clerk id
   (`user_id`), so the same account sees the same progress on every device.
 - Rows from before accounts have no owner and show up for nobody.
@@ -23,14 +25,7 @@ Done in slices 23 and 24 (October 2026):
   (Access mode → Invite-only), and each person can upload at most 50 photos a
   calendar month.
 
-Still open:
-
-- **Clerk production app.** The live site runs on Clerk's free development app
-  ("Development mode" badge, about 100 users). Real public sign-ups need a
-  production app, a domain we own, and our own Google OAuth client. Accounts
-  don't move from the development app to a production one, so people would
-  sign up again; their data in Turso stays, but would need to be linked to the
-  new account ids (a one-time script).
+Still open: the Clerk production app (see [Still open](#still-open) below).
 
 ## Phase 2: Visit memories (done: slice 18, with a monthly limit in slice 23)
 
@@ -83,9 +78,12 @@ sharing" or "Make a new link"); a reached milestone gets a calm gold card.
 
 ## Still open
 
-- **A Clerk production app** (see Phase 1): our own domain, our own Google
-  OAuth client, and a one-time script linking people's data to their new
-  account ids. The live site still runs on Clerk's development app.
+- **A Clerk production app.** The live site runs on Clerk's free development
+  app ("Development mode" badge, about 100 users). Real public sign-ups need a
+  production app, a domain we own, and our own Google OAuth client. Accounts
+  don't move from the development app to a production one, so people would
+  sign up again; their data in Turso stays, but would need to be linked to the
+  new account ids (a one-time script).
 - **Switching off the Flask site**: it stays up as a fallback until
   2026-11-05, and switching it off needs an explicit OK.
 - **Photos in the backup**: the backup lists where the photos are, but not the
