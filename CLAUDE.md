@@ -112,8 +112,8 @@ No other packages without asking me first.
 - Signed out, every page goes to /sign-in (and back afterwards), except
   the landing page (`/`), sign-in, sign-up, shared maps, the privacy page
   (`/privacy`), the account-deletion webhook (`/api/webhooks/clerk`, which
-  checks Clerk's signature itself), the styles, icons and manifest. The old
-  /login goes to /sign-in.
+  checks Clerk's signature itself), the logo (`/logo.png`), the styles, icons
+  and manifest. The old /login goes to /sign-in.
 - Every page and form action checks who's signed in itself (requireUserId),
   not only proxy.ts.
 - Deleting an account (Manage account → Delete account) deletes everything

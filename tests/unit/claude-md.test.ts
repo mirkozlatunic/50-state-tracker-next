@@ -4,6 +4,9 @@
 // checks keep the split in place: each design rule is in design-rules.md and
 // not also in CLAUDE.md, and the data, security and working rules stay in
 // CLAUDE.md itself.
+// Slice 26b: each design rule is checked by its full text (so a dropped
+// sentence is caught), and the import lines are found however the top of the
+// file is spaced or which line endings it uses.
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 
@@ -13,16 +16,18 @@ const DESIGN = "docs/design-rules.md";
  * so a rule matches however its lines are wrapped. */
 const text = (file: string) => readFileSync(file, "utf8").replace(/\s+/g, " ");
 
-// The start of each design rule (they moved to docs/design-rules.md).
+// Each design rule, in full (they moved to docs/design-rules.md word for word).
 const DESIGN_RULES = [
-  "Buttons, fields, cards and pop-ups come from shadcn",
-  "Map colors (brand palette): sage = visited",
-  "Status never relies on color alone",
-  "City dots: solid navy (light in dark mode) = visited city",
-  "Brand palette (src/app/globals.css): navy #16364B",
-  "On phones (640px wide or less), `/map` shows the next trip",
+  "Buttons, fields, cards and pop-ups come from shadcn (`src/components/ui`). Use its sizes so buttons in a row line up; don't hand-roll button styles.",
+  "Map colors (brand palette): sage = visited, gold = in a trip that hasn't ended (also striped), pale grey-green = neither. Visited wins over planned. Status never relies on color alone (stripes, check marks, words for screen readers).",
+  "City dots: solid navy (light in dark mode) = visited city, hollow with a gold ring = city in a trip that hasn't ended. A city that's both shows the gold ring. One dot per city.",
+  "Brand palette (src/app/globals.css): navy #16364B, sage #8FA28B, gold #F1B84A, warm off-white #FBFAF7, plus a matching dark theme. Text on gold is navy; every text color passes 4.5 : 1 contrast (tests/unit/palette.test.ts).",
+  "On phones (640px wide or less), `/map` shows the next trip and the four Census regions as cards instead of the map. Bigger screens keep the map.",
   "In every row of buttons, the buttons' vertical centers line up within 1px.",
 ];
+
+// The first words of each design rule, to check CLAUDE.md doesn't repeat any of them.
+const DESIGN_RULE_STARTS = DESIGN_RULES.map((rule) => rule.slice(0, 40));
 
 // A few of the rules that stay in CLAUDE.md: data, security, secrets, how we work.
 const KEPT_RULES = [
@@ -37,9 +42,12 @@ const KEPT_RULES = [
 ];
 
 describe("CLAUDE.md", () => {
-  test("pulls in AGENTS.md and docs/design-rules.md at the top", () => {
-    const lines = readFileSync(CLAUDE, "utf8").split("\n");
-    expect(lines.slice(0, 2)).toEqual(["@AGENTS.md", "@docs/design-rules.md"]);
+  test("pulls in AGENTS.md and docs/design-rules.md at the top (before the first heading)", () => {
+    // Any line ending (\r\n on Windows), blank lines and spaces are fine.
+    const lines = readFileSync(CLAUDE, "utf8").split(/\r?\n/).map((line) => line.trim());
+    const top = lines.slice(0, lines.findIndex((line) => line.startsWith("#")));
+    expect(top).toContain("@AGENTS.md");
+    expect(top).toContain("@docs/design-rules.md");
   });
 
   test("keeps the data, security, secret and working rules", () => {
@@ -47,12 +55,12 @@ describe("CLAUDE.md", () => {
   });
 
   test("no longer repeats the design rules", () => {
-    for (const rule of DESIGN_RULES) expect(text(CLAUDE), rule).not.toContain(rule);
+    for (const start of DESIGN_RULE_STARTS) expect(text(CLAUDE), start).not.toContain(start);
   });
 });
 
 describe("docs/design-rules.md", () => {
-  test("exists and has every design rule", () => {
+  test("exists and has every design rule, in full", () => {
     expect(existsSync(DESIGN)).toBe(true);
     for (const rule of DESIGN_RULES) expect(text(DESIGN), rule).toContain(rule);
   });
