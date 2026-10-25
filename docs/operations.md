@@ -11,7 +11,9 @@ pnpm install
 pnpm dev            # then open http://localhost:3000
 ```
 
-Signing in is [Clerk](https://clerk.com) (email code or Google). Put its two
+Signing in is [Clerk](https://clerk.com). Which ways people can sign up and
+sign in (email code, Google, password, ...) is set in the Clerk dashboard
+(User & authentication), not in the code. Put its two
 keys from the Clerk dashboard (API keys) in `.env.local`:
 
 ```

@@ -89,7 +89,8 @@ No other packages without asking me first.
 ## Hard rules
 
 - There are exactly 50 states.
-- Anyone can sign up (email code or Google, through Clerk). Each person has
+- Anyone can sign up through Clerk; the ways to sign up and sign in (email
+  code, Google, password, ...) are whatever the Clerk app is set to. Each person has
   their own tracker: they see and change only their own visits and trips,
   and someone else's visit or trip acts as if it didn't exist.
 - A state can have several visits, but it counts only once in my progress.

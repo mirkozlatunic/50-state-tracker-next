@@ -16,7 +16,7 @@ earlier Flask app, and it runs on Vercel with a Turso database.
 - **Visits**: state, date, city (from the US Census city list), note, a longer story, and up to 6 photos, shrunk in the browser so their location data is removed.
 - **Trips**: a name, dates, one or more states and cities. They can be edited, deleted or moved to another year, and the years page shows what each year adds.
 - **Sharing**: a read-only link showing only which states you've visited. It's off until you turn it on.
-- **Accounts** through Clerk (email code or Google). Everyone sees only their own data, and deleting an account deletes its data.
+- **Accounts** through Clerk, with whichever sign-in methods the Clerk app allows. Everyone sees only their own data, and deleting an account deletes its data.
 - **Backup**: download your visits and trips as one SQLite file.
 - **Light and dark themes** (with a soft fade between them), a brand palette whose text colors all pass 4.5 : 1 contrast, and a layout for desktop, iPad and iPhone, which can also open it from the home screen.
 
