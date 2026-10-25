@@ -17,8 +17,8 @@ export default function PrivacyPage() {
       <h1 className="text-3xl font-semibold tracking-tight">Privacy</h1>
 
       <Section title="What's stored">
-        Your sign-in details (such as your email address) are handled by Clerk, our sign-in service. This app
-        stores what you add:
+        Your sign-in details (such as your email address, or your Google account and its profile picture if you
+        sign in with Google) are handled by Clerk, our sign-in service. This app stores what you add:
         your visits (state, date, city, note, story), your trips, the photos you add to visits, and a few settings (your
         milestones and, if you turn it on, your share link). Photos are shrunk in your browser before upload, which also
         removes their location data.
