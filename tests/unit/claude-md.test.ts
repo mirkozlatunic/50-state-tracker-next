@@ -7,6 +7,8 @@
 // Slice 26b: each design rule is checked by its full text (so a dropped
 // sentence is caught), and the import lines are found however the top of the
 // file is spaced or which line endings it uses.
+// Slice 26c: CLAUDE.md is checked for repeats with short, whole-word starts of
+// each rule, and a CLAUDE.md without any heading fails the imports check.
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 
@@ -26,8 +28,17 @@ const DESIGN_RULES = [
   "In every row of buttons, the buttons' vertical centers line up within 1px.",
 ];
 
-// The first words of each design rule, to check CLAUDE.md doesn't repeat any of them.
-const DESIGN_RULE_STARTS = DESIGN_RULES.map((rule) => rule.slice(0, 40));
+// A short, whole-word start of each design rule (and of the colour rule's
+// last sentence), to check CLAUDE.md doesn't repeat any of them.
+const DESIGN_RULE_STARTS = [
+  "Buttons, fields, cards and pop-ups come from shadcn",
+  "Map colors (brand palette)",
+  "Status never relies on color alone",
+  "City dots: solid navy",
+  "Brand palette (src/app/globals.css)",
+  "On phones (640px wide or less), `/map` shows",
+  "In every row of buttons",
+];
 
 // A few of the rules that stay in CLAUDE.md: data, security, secrets, how we work.
 const KEPT_RULES = [
@@ -45,7 +56,9 @@ describe("CLAUDE.md", () => {
   test("pulls in AGENTS.md and docs/design-rules.md at the top (before the first heading)", () => {
     // Any line ending (\r\n on Windows), blank lines and spaces are fine.
     const lines = readFileSync(CLAUDE, "utf8").split(/\r?\n/).map((line) => line.trim());
-    const top = lines.slice(0, lines.findIndex((line) => line.startsWith("#")));
+    const firstHeading = lines.findIndex((line) => line.startsWith("#"));
+    expect(firstHeading, "CLAUDE.md has a heading").toBeGreaterThan(0);
+    const top = lines.slice(0, firstHeading);
     expect(top).toContain("@AGENTS.md");
     expect(top).toContain("@docs/design-rules.md");
   });

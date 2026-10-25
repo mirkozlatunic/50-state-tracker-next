@@ -17,6 +17,9 @@ test.describe("signed out", () => {
     await expect(page.getByRole("heading", { name: "Privacy", level: 1 })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2 })).toHaveText(SECTIONS);
     await expect(page.getByText("Delete account")).toBeVisible();
+    // Slice 26c: it says what's used when someone signs in with Google (the
+    // Account button shows their Google picture), without promising Google sign-in.
+    await expect(page.getByText(/your Google account and its profile picture if you sign in with Google/)).toBeVisible();
   });
 
   test("the landing page links to it at the bottom", async ({ page }) => {
