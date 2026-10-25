@@ -1,90 +1,56 @@
 # 50 States Tracker
 
-Track trips through all 50 US states: which states I've visited, when, and
-which trips are planned next. Next.js + shadcn/ui, with the data in Turso
-(hosted SQLite), hosted on Vercel. It replaces the Flask app
-([50-state-tracker](https://github.com/mirkozlatunic/50-state-tracker)).
+A personal tracker for visiting all 50 US states. Mark the states you've
+visited (with a date, a city, a note, a story and photos), plan upcoming trips,
+and watch the map fill in: sage for visited, striped gold for planned. Each
+person signs in and sees only their own tracker. It's a Next.js rewrite of an
+earlier Flask app, and it runs on Vercel with a Turso database.
 
-Live: https://50-state-tracker-next.vercel.app
+**Live:** https://50-state-tracker-next.vercel.app
 
-## On the computer
+## Features
 
-```bash
-pnpm install
-pnpm dev            # then open http://localhost:3000
-```
+- **A landing page with sample data**, so visitors can see the app before signing up.
+- **The map**: visited, planned and not-yet-visited states, city dots for visited and upcoming cities, and a year filter for trips. On phones it becomes the next trip and four region cards.
+- **Progress**: 50 states, visited, remaining, with milestones at 10, 25 and 50 states and a one-time celebration when a visit reaches one.
+- **Visits**: state, date, city (from the US Census city list), note, a longer story, and up to 6 photos, shrunk in the browser so their location data is removed.
+- **Trips**: a name, dates, one or more states and cities. They can be edited, deleted or moved to another year, and the years page shows what each year adds.
+- **Sharing**: a read-only link showing only which states you've visited. It's off until you turn it on.
+- **Accounts** through Clerk (email code or Google). Everyone sees only their own data, and deleting an account deletes its data.
+- **Backup**: download your visits and trips as one SQLite file.
+- **Light and dark themes** (with a soft fade between them), a brand palette whose text colors all pass 4.5 : 1 contrast, and a layout for desktop, iPad and iPhone, which can also open it from the home screen.
 
-Signing in is [Clerk](https://clerk.com) (email code or Google). Put its two
-keys from the Clerk dashboard (API keys) in `.env.local`:
+## Screenshots
 
-```
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-```
+The pictures use the app's sample data, not anyone's real trips. `pnpm screenshots` takes them again.
 
-The computer uses its own database file, `local.sqlite` (git ignores it).
+| | Light | Dark |
+|---|---|---|
+| Landing page, computer | ![Landing page on a computer, light](docs/screenshots/landing-desktop-light.png) | ![Landing page on a computer, dark](docs/screenshots/landing-desktop-dark.png) |
+| Map, computer | ![Map page on a computer, light](docs/screenshots/map-desktop-light.png) | ![Map page on a computer, dark](docs/screenshots/map-desktop-dark.png) |
+| Landing page, iPhone | ![Landing page on an iPhone, light](docs/screenshots/landing-iphone-light.png) | ![Landing page on an iPhone, dark](docs/screenshots/landing-iphone-dark.png) |
+| Map, iPhone | ![Map page on an iPhone, light](docs/screenshots/map-iphone-light.png) | ![Map page on an iPhone, dark](docs/screenshots/map-iphone-dark.png) |
 
-## Checks
+## How it was built
 
-```bash
-pnpm lint && pnpm typecheck && pnpm build
-pnpm test        # unit tests (Vitest), each with its own temporary database
-pnpm test:e2e    # browser tests (Playwright), desktop and iPhone sizes
-E2E_BUILT=1 pnpm test:e2e   # the same, against the built app (after pnpm build), like GitHub
-pnpm test:live   # checks against the online site (no account needed)
-```
+Built with [Claude Code](https://claude.com/claude-code), working from the
+rules in [CLAUDE.md](CLAUDE.md), in small steps called slices:
 
-The browser tests sign in as two Clerk test people (`tracker-a+clerk_test@example.com`
-and `tracker-b+…`), created in the Clerk app the first time. `+clerk_test`
-addresses never get real email; their sign-in code is 424242. On GitHub the
-checks need the same two Clerk keys as repository secrets
-(`gh secret set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `gh secret set CLERK_SECRET_KEY`).
+1. **Plan first.** Each change starts as a written plan, and no code is written until it's approved.
+2. **Tests first.** The slice's tests are written and reviewed before the code that makes them pass.
+3. **All checks, every time:** lint, typecheck, a production build, the unit tests (Vitest, each with its own temporary database) and the browser tests (Playwright, at computer and iPhone size, signed in as two Clerk test people).
+4. **Screenshots** of every change at desktop, iPad and iPhone width, in light and dark.
+5. **A pull request per slice**, with a Vercel preview. GitHub runs the same checks again, split over three machines, before anything is merged. After each deploy, `pnpm test:live` checks the live site.
 
-Keep the Mac awake and plugged in while the browser tests run; sleep makes them fail.
+Code reviews (`/code-review`) after a slice turn their findings into follow-up
+slices, tests first as well. Today that's about 490 unit tests and 230 browser
+tests. Ideas for later are in [docs/roadmap.md](docs/roadmap.md).
 
-## Settings on Vercel
+**Stack:** Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui
+(Base UI), Clerk, Drizzle ORM with Turso (libSQL), Vercel Blob, motion,
+Vitest and Playwright.
 
-Project → Settings → Environment Variables. Paste values without quotes, and
-redeploy after changing one (settings only reach new deployments).
+## Running it yourself
 
-| Name | What it is | Production | Preview |
-|---|---|---|---|
-| `DATABASE_URL` | The Turso database address | `tracker` (real data) | `tracker-preview` (test data) |
-| `DATABASE_AUTH_TOKEN` | Its token: `turso db tokens create <name>` | for `tracker` | for `tracker-preview` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API keys | Clerk production app | Clerk development app |
-| `CLERK_SECRET_KEY` | Clerk dashboard → API keys | Clerk production app | Clerk development app |
-
-## Moving the data (from the Flask app, or from a backup)
-
-A backup is one SQLite file with the same tables in both apps (plus `user_id`),
-so it loads straight into Turso. Each person's backup holds only their own
-visits and trips.
-
-1. Download a backup: "Download backup" in the menu at the top right.
-2. Create a database from it: `turso db create tracker --from-file ~/Downloads/tracker-YYYY-MM-DD.sqlite`
-   (a new name if `tracker` already exists).
-3. Point Production at it: change `DATABASE_URL` and `DATABASE_AUTH_TOKEN` on Vercel, then redeploy.
-4. Run `pnpm test:live`, then sign in and look around. Rows from the Flask app
-   (or from before accounts) have no owner yet (`user_id` is empty) and show
-   up for nobody until they're given to someone.
-
-## Photos
-
-A visit can have up to 6 photos. Online they're in the private Vercel Blob
-store `tracker-photos` (connected to Preview and Production; its key is the
-`BLOB_READ_WRITE_TOKEN` setting Vercel added). On the computer (`pnpm dev`) and
-in the tests they're saved in a local folder instead (`.photos/`, which git
-ignores), so nothing touches the real store. The backup lists where your photos
-are, but not the pictures themselves.
-
-## Logo and icons
-
-The logo is the rope-ring badge, kept unchanged in `docs/brand/logo-source.png`.
-`sh scripts/make-icons.sh` makes `public/logo.png` (the badge cropped to a square,
-shown cut to a circle) and the browser and home-screen icons in `public/icons/`
-from it, with macOS's built-in `sips`. Run it again if the source ever changes.
-
-## iPhone home screen
-
-Open the live address in Safari, sign in, then Share → Add to Home Screen. It
-opens full screen on the map, with the name "50 States".
+Setup, settings, checks, backups, the photo store and the Clerk settings are in
+[docs/operations.md](docs/operations.md).
