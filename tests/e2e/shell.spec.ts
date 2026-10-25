@@ -10,6 +10,8 @@
 // switch still works after the theme was changed elsewhere (another tab).
 // Slice 22d: the fade-watching code is shared (fades.ts), and the switch
 // still works when a fade fails to start.
+// Slice 22e: isDark checks the class as a whole word, and the failed-start
+// test checks that exactly one fade ran.
 import { expect, test, type Page } from "@playwright/test";
 import { expectCurrentPage, logIn, openNavMenu, openTestDatabase, userId } from "./helpers";
 import { readFades, recordFades } from "./fades";
@@ -219,8 +221,9 @@ test.describe("light and dark", () => {
     await expect.poll(background).not.toBe(before);
   });
 
-  /** True when the page is in the dark theme. */
-  const isDark = async (page: Page) => ((await page.locator("html").getAttribute("class")) ?? "").includes("dark");
+  /** True when the page is in the dark theme: "dark" is one of <html>'s
+   * classes (the whole word, not just text inside another class name). */
+  const isDark = (page: Page) => page.locator("html").evaluate((html) => html.classList.contains("dark"));
 
   test("switching fades softly from one theme to the other (about 0.3 s)", async ({ page }) => {
     await recordFades(page);
@@ -275,6 +278,8 @@ test.describe("light and dark", () => {
     await themeButton(page).click(); // the next one fades normally
     await expect.poll(() => isDark(page)).toBe(started);
     await expect.poll(async () => (await readFades(page)).finished).toBe(1);
+    expect((await readFades(page)).fades).toBe(1); // only the second click faded; no retry
+    // Slice 22e: the failed start isn't counted (it threw), so exactly one fade ran.
   });
 
   test("with reduced motion turned on, it switches at once (no fade)", async ({ page }) => {

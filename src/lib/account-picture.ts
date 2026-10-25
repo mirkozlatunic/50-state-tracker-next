@@ -4,6 +4,8 @@
 // The button's picture is 28px; asking for twice that keeps it sharp on
 // Retina screens.
 const PICTURE_PIXELS = 56;
+// Clerk's image server, which can shrink and crop pictures for us.
+const CLERK_IMAGES = "img.clerk.com";
 
 export type AccountButtonLook = { kind: "loading" } | { kind: "icon" } | { kind: "picture"; src: string };
 
@@ -31,6 +33,10 @@ export function accountButtonLook(
   // Only a normal https address can take Clerk's size options; anything else
   // (data:, blob:, http:) would end up broken, so show the icon (slice 22d).
   if (src.protocol !== "https:") return { kind: "icon" };
+  // The size options only work on Clerk's own image server. On another server
+  // they could break the address (e.g. a signed one), so use it as it is
+  // (slice 22e); the browser shrinks it to the button's size.
+  if (src.hostname !== CLERK_IMAGES) return { kind: "picture", src: user.imageUrl };
   src.searchParams.set("width", String(PICTURE_PIXELS));
   src.searchParams.set("height", String(PICTURE_PIXELS));
   src.searchParams.set("fit", "crop");
