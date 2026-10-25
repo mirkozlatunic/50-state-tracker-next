@@ -85,7 +85,7 @@ export async function openTestDatabase() {
 export async function resetData() {
   const db = await openTestDatabase();
   await db.$client.batch(
-    ["DELETE FROM user_settings", "DELETE FROM visit_photos", "DELETE FROM trip_cities", "DELETE FROM trip_states", "DELETE FROM trips", "DELETE FROM visits"],
+    ["DELETE FROM photo_uploads", "DELETE FROM user_settings", "DELETE FROM visit_photos", "DELETE FROM trip_cities", "DELETE FROM trip_states", "DELETE FROM trips", "DELETE FROM visits"],
     "write",
   );
   db.$client.close();

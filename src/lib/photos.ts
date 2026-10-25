@@ -1,8 +1,30 @@
 // The rules for a visit's photos (slice 18): what counts as a photo, how big
 // it may be, how many a visit can have, and where each one is stored.
+// Slice 23: how many a person can upload in a month.
 
 /** The most photos one visit can have. */
 export const PHOTO_MAX_PER_VISIT = 6;
+
+/** The most photos one person can upload in a calendar month (slice 23). Each
+ * photo is two uploads to the photo store (the photo and its preview), and the
+ * free Vercel Blob plan allows 2,000 a month for everyone together, then stops
+ * all uploads for 30 days. 50 photos is 100 of those. */
+export const PHOTO_MAX_PER_MONTH = 50;
+
+/** The calendar month a day belongs to, as "YYYY-MM" (from "YYYY-MM-DD"). */
+export function uploadMonth(day: string): string {
+  return day.slice(0, 7);
+}
+
+/** What the page says when someone has used up `month`'s uploads: when they
+ * can add more (the 1st of the next month). */
+export function photoLimitMessage(month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  // Date.UTC with month index `monthNumber` is the next month (indexes start at 0);
+  // December rolls over to January of the next year by itself.
+  const next = new Date(Date.UTC(year, monthNumber, 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" });
+  return `You've added ${PHOTO_MAX_PER_MONTH} photos this month, the most for one month. You can add more from ${next} 1.`;
+}
 
 /** The biggest file accepted, in bytes (3 MB). The browser shrinks photos to
  * well under this first; the server checks again. */

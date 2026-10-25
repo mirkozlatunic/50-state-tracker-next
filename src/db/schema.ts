@@ -75,6 +75,17 @@ export const visitPhotos = sqliteTable("visit_photos", {
 
 // Each person's settings, one row each (slice 19): the highest milestone
 // already celebrated (0 = none yet).
+// How many photos each person uploaded in a calendar month (slice 23; see schema.sql).
+export const photoUploads = sqliteTable(
+  "photo_uploads",
+  {
+    userId: text("user_id").notNull(),
+    month: text("month").notNull(), // "YYYY-MM", Los Angeles time
+    count: integer("count").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.month] })],
+);
+
 export const userSettings = sqliteTable("user_settings", {
   userId: text("user_id").primaryKey(),
   celebrated: integer("celebrated").notNull().default(0),

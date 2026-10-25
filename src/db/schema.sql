@@ -68,5 +68,15 @@ CREATE TABLE IF NOT EXISTS user_settings (
     share_id   TEXT  -- slice 20: the code in my shared map's link, or NULL when not shared
 );
 
+-- How many photos each person has uploaded in a calendar month (slice 23), for
+-- the monthly limit. Uploads, not photos kept: a deleted photo still used one.
+-- month is "YYYY-MM" (Los Angeles time). The PRIMARY KEY makes one row per person per month.
+CREATE TABLE IF NOT EXISTS photo_uploads (
+    user_id TEXT NOT NULL,
+    month   TEXT NOT NULL,
+    count   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, month)
+);
+
 -- Signing in is Clerk's job now, so the old wrong-password table goes.
 DROP TABLE IF EXISTS login_failures;
