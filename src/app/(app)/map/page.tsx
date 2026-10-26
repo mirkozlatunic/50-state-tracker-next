@@ -11,9 +11,9 @@ import { PageBody, PageTitle } from "@/components/page-title";
 import { ProgressStats } from "@/components/progress-stats";
 import { appDatabase } from "@/db/app";
 import { requireUserId } from "@/lib/auth/server";
-import { loadTrips, loadVisits, visitedStateCount } from "@/db/queries";
+import { cityPhotos, loadTrips, loadVisits, visitedStateCount } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
-import { readMapYear } from "@/lib/map-view";
+import { readMapYear, withCityPhotos } from "@/lib/map-view";
 import { cityDots, nextTrip, regionSummaries, stateStatuses, tripYears } from "@/lib/progress";
 
 export const metadata: Metadata = { title: "Map" };
@@ -23,6 +23,7 @@ export const metadata: Metadata = { title: "Map" };
 // region cards show instead. ?year=2027 only counts trips starting in 2027.
 // Since slice 21 it's the first page after signing in, so your numbers and
 // milestones (once on the home page) sit at the top.
+// Since slice 27 a visited city's pop-up shows its photo (see city-photos.ts).
 export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <PageBody>
@@ -52,6 +53,7 @@ async function MapContent({ searchParams }: Pick<PageProps<"/map">, "searchParam
   const db = await appDatabase();
   const data = { visits: await loadVisits(db, userId), trips: await loadTrips(db, userId) };
   const today = todayIn();
+  const dots = withCityPhotos(cityDots(data, today, year ?? undefined), await cityPhotos(db, userId));
 
   return (
     <>
@@ -67,7 +69,7 @@ async function MapContent({ searchParams }: Pick<PageProps<"/map">, "searchParam
 
       {/* Bigger screens: the map. */}
       <div className="hidden flex-col gap-4 sm:flex">
-        <UsMap statuses={stateStatuses(data, today, year ?? undefined)} dots={cityDots(data, today, year ?? undefined)} />
+        <UsMap statuses={stateStatuses(data, today, year ?? undefined)} dots={dots} />
         <MapLegend year={year} />
         <p className="text-sm text-muted-foreground">
           Tiny states like Rhode Island are easier to pick from the{" "}

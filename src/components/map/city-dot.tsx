@@ -2,7 +2,11 @@
 // One city dot over the map: a small round button. Clicking it (or hovering
 // with a mouse) opens a shadcn Popover with the city's visits and trips, and a
 // link to its state (unless `linked` is false). A tap works the same on the iPhone.
+// Slice 27: a visited city with a photo shows its 400 px preview above the
+// text, with the date of that visit. The pop-up's content is only put on the
+// page while it's open, so the photo is only loaded then, not with the map.
 
+import Image from "next/image";
 import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -15,6 +19,7 @@ export function CityDot({
   left,
   top,
   linked = true,
+  photo,
 }: {
   label: string;
   kind: "visited" | "upcoming";
@@ -24,6 +29,7 @@ export function CityDot({
   left: string;
   top: string;
   linked?: boolean;
+  photo?: { src: string; alt: string; visitDate: string };
 }) {
   return (
     <Popover>
@@ -41,6 +47,21 @@ export function CityDot({
         }`}
       />
       <PopoverContent side="top" className="w-64">
+        {photo && (
+          <figure className="flex flex-col gap-1">
+            {/* unoptimized: the photo is private, and next/image's resizer
+                would fetch it without the owner's sign-in (and get "Not found"). */}
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              width={400}
+              height={250}
+              unoptimized
+              className="aspect-8/5 w-full rounded-md bg-muted object-cover"
+            />
+            <figcaption className="text-xs text-muted-foreground tabular-nums">Photo: visit on {photo.visitDate}</figcaption>
+          </figure>
+        )}
         <p>{details}</p>
         {linked && (
           <Link href={`/states/${stateCode}`} className="font-medium hover:underline">

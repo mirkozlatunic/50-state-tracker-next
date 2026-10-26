@@ -5,7 +5,8 @@
 // Clerk id: it only reads and changes that person's visits and trips.
 // Someone else's visit or trip acts exactly like one that doesn't exist.
 
-import { and, asc, countDistinct, desc, eq, exists, inArray, sql } from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, exists, inArray, isNotNull, sql } from "drizzle-orm";
+import { pickCityPhotos, type CityPhoto } from "@/lib/city-photos";
 import type { Trip, Visit } from "@/lib/progress";
 import { PHOTO_MAX_PER_MONTH, PHOTO_MAX_PER_VISIT } from "@/lib/photos";
 import { isShareId, newShareId } from "@/lib/share";
@@ -286,6 +287,21 @@ export async function photoCounts(db: Database, userId: string, visitIds: number
     .where(and(inArray(visitPhotos.visitId, visitIds), eq(visitPhotos.userId, userId)))
     .groupBy(visitPhotos.visitId);
   return new Map(rows.map((row) => [row.visitId, Number(row.count)]));
+}
+
+/** Each of my visited cities' photo (slice 27), by city key ("CO|Denver"): the
+ * first photo of my most recent visit to that city that has photos. Cities
+ * without one are left out. Both the photo and its visit must be mine. */
+export async function cityPhotos(db: Database, userId: string): Promise<Map<string, CityPhoto>> {
+  const rows = await db
+    .select({ state: states.code, city: visits.city, photoId: visitPhotos.id, visitDate: visits.visitDate })
+    .from(visitPhotos)
+    .innerJoin(visits, eq(visits.id, visitPhotos.visitId))
+    .innerJoin(states, eq(states.id, visits.stateId))
+    .where(and(eq(visitPhotos.userId, userId), eq(visits.userId, userId), isNotNull(visits.city)))
+    // Most recent visit first (the later-added one on the same day), then its oldest photo.
+    .orderBy(desc(visits.visitDate), desc(visits.id), asc(visitPhotos.id));
+  return pickCityPhotos(rows);
 }
 
 // ---- Deleting an account (slice 24).
