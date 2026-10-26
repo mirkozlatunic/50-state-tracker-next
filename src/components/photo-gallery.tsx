@@ -1,9 +1,7 @@
 "use client";
 // A visit's photos on its visit page (slice 18): small previews, "Add photos",
-// and a pop-up with the big photo and "Delete photo". Before uploading, the
-// browser shrinks each photo (at most 2000 px) and makes a 400 px preview.
-// Drawing the photo again on a canvas also leaves out its Exif data, where
-// phones keep the place a photo was taken.
+// and a pop-up with the big photo and "Delete photo". Shrinking and sending
+// each photo is in photo-upload.ts (shared with the add-visit form since slice 30).
 
 import { useId, useState } from "react";
 import Image from "next/image";
@@ -23,50 +21,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { uploadPhoto } from "@/lib/photo-upload";
 import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
 
 export type GalleryPhoto = { id: number; width: number; height: number };
 
-const FULL_SIZE = 2000; // longest side of a stored photo, in pixels
-const THUMB_SIZE = 400; // longest side of a preview
-const NOT_A_PHOTO = "That file isn't a photo.";
 const TOO_MANY = `A visit can have at most ${PHOTO_MAX_PER_VISIT} photos.`;
-
-/** Draw `image` at most `longest` px on its longest side, as a JPEG. */
-async function shrink(image: ImageBitmap, longest: number, quality: number) {
-  const scale = Math.min(1, longest / Math.max(image.width, image.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(image.width * scale);
-  canvas.height = Math.round(image.height * scale);
-  canvas.getContext("2d")!.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/jpeg", quality));
-  if (!blob) throw new Error(NOT_A_PHOTO);
-  return { blob, width: canvas.width, height: canvas.height };
-}
-
-/** Shrink one chosen file and send it. null when it worked, otherwise why not. */
-async function upload(visitId: number, file: File): Promise<string | null> {
-  let image: ImageBitmap;
-  try {
-    // createImageBitmap reads the photo (turned the right way up, as the camera
-    // took it); it fails for files that aren't images.
-    image = await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
-    return NOT_A_PHOTO;
-  }
-  const full = await shrink(image, FULL_SIZE, 0.85);
-  const thumb = await shrink(image, THUMB_SIZE, 0.75);
-  image.close();
-  const form = new FormData();
-  form.set("full", full.blob, "photo.jpg");
-  form.set("thumb", thumb.blob, "thumb.jpg");
-  form.set("width", String(full.width));
-  form.set("height", String(full.height));
-  const response = await fetch(`/api/visits/${visitId}/photos`, { method: "POST", body: form });
-  if (response.ok) return null;
-  const body = await response.json().catch(() => null);
-  return body?.error ?? "That photo couldn't be added. Please try again.";
-}
 
 export function PhotoGallery({ visitId, photos }: { visitId: number; photos: GalleryPhoto[] }) {
   const router = useRouter();
@@ -83,7 +43,7 @@ export function PhotoGallery({ visitId, photos }: { visitId: number; photos: Gal
     let problem: string | null = files.length > room ? TOO_MANY : null;
     for (const [index, file] of toAdd.entries()) {
       setBusy(`Adding photo ${index + 1} of ${toAdd.length}…`);
-      const failed = await upload(visitId, file);
+      const failed = await uploadPhoto(visitId, file);
       if (failed) {
         problem = failed;
         break;

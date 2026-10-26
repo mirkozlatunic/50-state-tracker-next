@@ -55,6 +55,8 @@ const KEPT_RULES = [
   "The shared page (`/share/<code>`) never shows photos, visit dates or cities, even though it uses the same map.",
   // Slice 28: a planned trip's visited cities.
   "On a planned trip, each city I've already visited shows its photo (small, if it has one) and \"Visited <month year>\" (my most recent visit there).",
+  // Slice 30: photos can be chosen while adding a visit.
+  "the add-visit form stays short: state, city, date, note and optional photos (up to 6, uploaded after the visit is saved); more photos and the story are added on the visit page.",
 ];
 
 describe("CLAUDE.md", () => {

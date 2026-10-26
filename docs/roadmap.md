@@ -85,6 +85,9 @@ sharing" or "Make a new link"); a reached milestone gets a calm gold card.
   dates or cities.
 - **Slice 29:** an "Add photos" button on each visit row of a state page, which
   opens the visit's page at its photos (left out once a visit has 6).
+- **Slice 30:** photos while adding a visit: the add-visit form takes up to 6
+  optional photos, uploaded right after the visit is saved. If one can't be
+  added, the visit stays saved and the form says which photo and why.
 
 ## Still open
 

@@ -63,7 +63,9 @@ No other packages without asking me first.
   (e.g. California, CA). Washington, D.C. is not included.
 - A visit has: state, visit date, a short note, and optionally a city and a
   story (up to 5,000 characters). Each visit has its own page (`/visits/<id>`)
-  where the story is written; the quick add-visit form stays short.
+  where the story is written; the add-visit form stays short: state, city,
+  date, note and optional photos (up to 6, uploaded after the visit is
+  saved); more photos and the story are added on the visit page.
 - A visit can have up to 6 photos (visit page). The browser shrinks each to at
   most 2000 px (which drops its Exif/location data) and makes a 400 px preview.
   Photos live in the private Vercel Blob store `tracker-photos` (Preview and
