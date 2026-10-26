@@ -1,10 +1,13 @@
 // For phones: the four Census regions as cards, with the same colors and rules
-// as the map (year filter included), and the next trip on top.
+// as the map (year filter included), and the next trip on top. Since slice 28
+// the next trip's cities I've visited show their photo and when I was there.
 
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { TripCities } from "@/components/trip-cities";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { VisitedCity } from "@/lib/city-photos";
 import { STATE_NAMES } from "@/lib/data/states";
 import type { RegionSummary, StateStatus, Trip } from "@/lib/progress";
 
@@ -65,8 +68,17 @@ export function RegionCard({ region }: { region: RegionSummary }) {
 }
 
 /** The soonest trip that hasn't ended, or an offer to plan one. `linked={false}`:
- * the trip's name is plain text (the landing page's sample has nowhere to link). */
-export function NextTripCard({ next, linked = true }: { next: { trip: Trip; when: string } | null; linked?: boolean }) {
+ * the trip's name is plain text (the landing page's sample has nowhere to link).
+ * `visitedCities`: its cities I've visited (none on the landing page's sample). */
+export function NextTripCard({
+  next,
+  linked = true,
+  visitedCities = {},
+}: {
+  next: { trip: Trip; when: string } | null;
+  linked?: boolean;
+  visitedCities?: Record<string, VisitedCity>;
+}) {
   return (
     <section aria-label="Next trip">
       <Card size="sm">
@@ -84,12 +96,8 @@ export function NextTripCard({ next, linked = true }: { next: { trip: Trip; when
               <p className="text-sm tabular-nums">
                 {next.trip.startDate} to {next.trip.endDate}
               </p>
-              <p className="text-sm">
-                {next.trip.states.map((code) => STATE_NAMES[code]).sort().join(", ")}
-                {next.trip.cities.length > 0 && (
-                  <span className="text-muted-foreground"> · {next.trip.cities.map((city) => city.name).join(", ")}</span>
-                )}
-              </p>
+              <p className="text-sm">{next.trip.states.map((code) => STATE_NAMES[code]).sort().join(", ")}</p>
+              <TripCities cities={next.trip.cities} visited={visitedCities} />
             </>
           ) : (
             <div className="flex items-center justify-between gap-3">

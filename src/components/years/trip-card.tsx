@@ -1,7 +1,8 @@
 "use client";
 // One trip on the years page: name, dates, states and cities, Edit/Delete, a
 // grip handle to drag it to another year, and the "Move to" menu (which also
-// works with a keyboard).
+// works with a keyboard). Since slice 28 the cities I've visited show their
+// photo and when I was there.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -9,19 +10,23 @@ import { useDraggable } from "@dnd-kit/core";
 import { GripVertical } from "lucide-react";
 import { removeTrip } from "@/app/(app)/trips/actions";
 import { EditDeleteActions } from "@/components/edit-delete-actions";
+import { TripCities } from "@/components/trip-cities";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { VisitedCity } from "@/lib/city-photos";
 import { STATE_NAMES } from "@/lib/data/states";
 import type { Trip } from "@/lib/progress";
 
 export function TripCard({
   trip,
+  visitedCities,
   moveTo,
   onMove,
   pending,
 }: {
   trip: Trip;
+  visitedCities: Record<string, VisitedCity>;
   moveTo: number[];
   onMove: (tripId: number, year: number) => void;
   pending: boolean;
@@ -69,9 +74,7 @@ export function TripCard({
                     </span>
                   ))}
               </span>
-              {trip.cities.length > 0 && (
-                <span className="text-sm text-muted-foreground">{trip.cities.map((city) => city.name).join(", ")}</span>
-              )}
+              <TripCities cities={trip.cities} visited={visitedCities} />
             </div>
           </div>
 

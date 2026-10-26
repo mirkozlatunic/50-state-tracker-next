@@ -2,7 +2,8 @@
 // the first photo (oldest upload) of my most recent visit to that city that
 // has photos. Only visits with a city count, and only my own photos.
 import { describe, expect, test } from "vitest";
-import { addPhoto, addVisit, cityPhotos } from "@/db/queries";
+import { addPhoto, addTrip, addVisit, cityPhotos, loadTrips, loadVisits } from "@/db/queries";
+import { visitedTripCities } from "@/lib/city-photos";
 import { ME, OTHER, withTestDatabase } from "./db-helpers";
 
 const db = withTestDatabase();
@@ -92,5 +93,24 @@ describe("only my own photos", () => {
     await photo(await visit("2024-07-04", "Denver"), 1);
 
     expect(await cityPhotos(db(), OTHER)).toEqual(new Map());
+  });
+});
+
+// Slice 28: a trip's visited cities come from my own visits and photos only.
+describe("a trip's visited cities", () => {
+  /** What `who`'s trips show: their visited trip cities, from their own data. */
+  const visitedOnTrips = async (who: string) =>
+    visitedTripCities(await loadTrips(db(), who), await loadVisits(db(), who), await cityPhotos(db(), who));
+
+  test("only count my own visits: someone else's visit and photo of the city never show on my trip", async () => {
+    // Someone else has visited Denver, with a photo; I haven't.
+    await photo(await visit("2024-07-04", "Denver", "CO", OTHER), 1, OTHER);
+    // We both plan a trip there.
+    const denverTrip = { name: "Denver", startDate: "2099-06-01", endDate: "2099-06-03", states: ["CO"], cities: [{ name: "Denver", state: "CO" }] };
+    await addTrip(db(), ME, denverTrip);
+    await addTrip(db(), OTHER, denverTrip);
+
+    expect(await visitedOnTrips(ME)).toEqual({});
+    expect((await visitedOnTrips(OTHER))["CO|Denver"]?.lastVisit).toBe("2024-07-04");
   });
 });
