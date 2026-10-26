@@ -11,6 +11,7 @@ import { PhotoGallery } from "@/components/photo-gallery";
 import { StoryEditor } from "@/components/story-editor";
 import { appDatabase } from "@/db/app";
 import { getVisit, photosForVisit } from "@/db/queries";
+import { photoVersion } from "@/lib/photos";
 import { requireUserId } from "@/lib/auth/server";
 import { STATE_NAMES } from "@/lib/data/states";
 
@@ -71,7 +72,7 @@ async function VisitContent({ params }: Pick<PageProps<"/visits/[id]">, "params"
         <h2 id="photos-heading" className="text-lg font-semibold">
           Photos
         </h2>
-        <PhotoGallery visitId={visit.id} photos={photos.map(({ id, width, height }) => ({ id, width, height }))} />
+        <PhotoGallery visitId={visit.id} photos={photos.map(({ id, width, height, fullPath }) => ({ id, width, height, version: photoVersion(fullPath) }))} />
       </section>
       <section aria-labelledby="story-heading" className="flex flex-col gap-3 border-t pt-6">
         <h2 id="story-heading" className="text-lg font-semibold">

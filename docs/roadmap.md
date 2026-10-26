@@ -88,6 +88,9 @@ sharing" or "Make a new link"); a reached milestone gets a calm gold card.
 - **Slice 30:** photos while adding a visit: the add-visit form takes up to 6
   optional photos, uploaded right after the visit is saved. If one can't be
   added, the visit stays saved and the form says which photo and why.
+- **Slice 31:** "Replace photo" in a photo's pop-up: the new file takes the old
+  one's place (and stays the city's photo), the old files are deleted. Photo
+  addresses carry a version (`?v=`), so a replaced photo shows up new at once.
 
 ## Still open
 

@@ -27,7 +27,7 @@ describe("a city's photo", () => {
     const newerPhoto = await photo(newer, 2);
     await visit("2025-03-01", "Denver"); // the newest visit, but it has no photos
 
-    expect((await cityPhotos(db(), ME)).get("CO|Denver")).toEqual({ photoId: newerPhoto, visitDate: "2024-07-04" });
+    expect((await cityPhotos(db(), ME)).get("CO|Denver")).toEqual({ photoId: newerPhoto, visitDate: "2024-07-04", version: expect.any(String) });
   });
 
   test("is the first photo (oldest upload) of that visit", async () => {
@@ -52,8 +52,8 @@ describe("a city's photo", () => {
 
     expect(await cityPhotos(db(), ME)).toEqual(
       new Map([
-        ["CO|Denver", { photoId: denver, visitDate: "2024-07-04" }],
-        ["OR|Portland", { photoId: portland, visitDate: "2024-08-01" }],
+        ["CO|Denver", { photoId: denver, visitDate: "2024-07-04", version: expect.any(String) }],
+        ["OR|Portland", { photoId: portland, visitDate: "2024-08-01", version: expect.any(String) }],
       ]),
     );
   });

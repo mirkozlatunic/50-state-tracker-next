@@ -7,6 +7,7 @@
 import Image from "next/image";
 import { cityKey, monthYear, type VisitedCity } from "@/lib/city-photos";
 import { cityPhotoAlt } from "@/lib/map-view";
+import { photoSrc } from "@/lib/photos";
 import type { TripCity } from "@/lib/rules";
 
 export function TripCities({
@@ -45,7 +46,7 @@ export function TripCities({
                 {photo && (
                   // unoptimized: the browser fetches the preview itself, signed in as its owner.
                   <Image
-                    src={`/photos/${photo.photoId}?size=thumb`}
+                    src={photoSrc(photo.photoId, photo.version, "thumb")}
                     alt={cityPhotoAlt({ name: city.name, state: city.state }, photo.visitDate)}
                     width={40}
                     height={40}

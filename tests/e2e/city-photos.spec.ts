@@ -38,7 +38,8 @@ test("a visited city's pop-up shows the first photo of its most recent visit wit
   await dotButton(page, "Denver, CO").hover();
   const image = popUp(page).getByRole("img", { name: "Photo from the visit to Denver, Colorado on 2024-07-04" });
   await expect(image).toBeVisible();
-  await expect(image).toHaveAttribute("src", `/photos/${photos.first}?size=thumb`);
+  // Slice 31: the address ends with the photo's version (v=...).
+  await expect(image).toHaveAttribute("src", new RegExp(`^/photos/${photos.first}\\?size=thumb&v=[a-z0-9]+$`));
   // The picture really loaded (the photo route sent it to its owner).
   await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
   await expect(popUp(page)).toContainText("Photo: visit on 2024-07-04");
@@ -62,7 +63,8 @@ test("the photo is only loaded when the pop-up opens, not with the map", async (
 
   await dotButton(page, "Denver, CO").click();
   await expect(popUp(page).getByRole("img")).toBeVisible();
-  expect(requested).toEqual([`/photos/${photos.first}?size=thumb`]);
+  expect(requested).toHaveLength(1);
+  expect(requested[0]).toMatch(new RegExp(`^/photos/${photos.first}\\?size=thumb&v=[a-z0-9]+$`));
 });
 
 test("a tap opens it too, at iPad width (820px)", async ({ page }) => {

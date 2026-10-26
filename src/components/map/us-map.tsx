@@ -7,6 +7,7 @@ import { CityDot } from "@/components/map/city-dot";
 import { MAP_HEIGHT, MAP_WIDTH, STATE_PATHS } from "@/lib/data/map";
 import { STATES, STATE_NAMES } from "@/lib/data/states";
 import { cityPhotoAlt, dotDetails, dotPosition } from "@/lib/map-view";
+import { photoSrc } from "@/lib/photos";
 import type { CityDot as Dot, StateStatus } from "@/lib/progress";
 
 // The striped pattern's id (an SVG pattern is used by its id).
@@ -71,7 +72,7 @@ export function UsMap({ statuses, dots, linked = true }: { statuses: Record<stri
           // Only the map page's dots have photos (never the shared map's or the landing page's).
           photo={
             dot.photo && {
-              src: `/photos/${dot.photo.id}?size=thumb`,
+              src: photoSrc(dot.photo.id, dot.photo.version, "thumb"),
               alt: cityPhotoAlt(dot, dot.photo.visitDate),
               visitDate: dot.photo.visitDate,
             }

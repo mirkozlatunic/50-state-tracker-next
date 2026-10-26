@@ -3,6 +3,7 @@
 // Slice 23: how many a person can upload in a month.
 // Slice 24: each person's own folder, so their photos can be deleted all at once.
 // Slice 30: choosing photos in the add-visit form.
+// Slice 31: a photo's address carries its version, so a replaced photo gets a new one.
 
 /** The most photos one visit can have. */
 export const PHOTO_MAX_PER_VISIT = 6;
@@ -26,6 +27,25 @@ export function photoLimitMessage(month: string): string {
   // December rolls over to January of the next year by itself.
   const next = new Date(Date.UTC(year, monthNumber, 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" });
   return `You've added ${PHOTO_MAX_PER_MONTH} photos this month, the most for one month. You can add more from ${next} 1.`;
+}
+
+/** A photo's version (slice 31): a short code made from its stored file's
+ * name. Each upload (and each replacement) has a new random file name, so a
+ * replaced photo gets a new version, and with it a new address the browser
+ * hasn't kept a copy of. It's a hash (FNV-1a), so it doesn't show the folder
+ * or user id in the name. */
+export function photoVersion(fullPath: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < fullPath.length; i++) {
+    hash ^= fullPath.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0; // multiply, kept to 32 bits
+  }
+  return hash.toString(36);
+}
+
+/** A photo's address: the photo, or its 400 px preview ("thumb"), with its version. */
+export function photoSrc(id: number, version: string, size?: "thumb"): string {
+  return size === "thumb" ? `/photos/${id}?size=thumb&v=${version}` : `/photos/${id}?v=${version}`;
 }
 
 /** Photos chosen in the add-visit form (slice 30): the new picks go after the
