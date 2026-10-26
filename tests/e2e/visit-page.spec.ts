@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 test("a visit on the state page links to its own page, which shows its details", async ({ page }) => {
   const id = await saveVisit();
   await page.goto("/states/CO");
-  await page.getByRole("list", { name: "Visits" }).getByRole("link", { name: "2024-07-04" }).click();
+  await page.getByRole("list", { name: "Visits" }).getByRole("link", { name: "2024-07-04", exact: true }).click();
   await expect(page).toHaveURL(`/visits/${id}`);
   await expect(page).toHaveTitle("Visit · 50 States Tracker");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Visit to Colorado");

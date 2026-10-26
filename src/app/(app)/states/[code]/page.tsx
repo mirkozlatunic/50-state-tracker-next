@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ImagePlus } from "lucide-react";
 import { connection } from "next/server";
 import { StateSkeleton } from "@/components/loading-skeletons";
 import { buttonVariants } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { requireUserId } from "@/lib/auth/server";
 import { celebratedMilestone, loadTrips, photoCounts, visitedStateCount, visitsForState } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
 import { STATES, STATE_NAMES } from "@/lib/data/states";
+import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
 import { upcomingTrips } from "@/lib/progress";
 
 /** The 50 state pages are known ahead of time (proxy.ts turns away other codes). */
@@ -25,6 +27,7 @@ export async function generateMetadata({ params }: PageProps<"/states/[code]">):
 }
 
 // One state: its visits (newest first) and the upcoming trips that include it.
+// Since slice 29 each visit row has "Add photos" (to its visit page's photos).
 export default function StatePage({ params, searchParams }: PageProps<"/states/[code]">) {
   return (
     <PageBody>
@@ -99,12 +102,26 @@ async function StateDetails({ code, milestone }: { code: string; milestone: numb
                     </span>
                   )}
                 </span>
-                <EditDeleteActions
-                  editHref={`/visits/${visit.id}/edit`}
-                  question="Delete this visit?"
-                  details={`The visit on ${visit.visitDate} in ${STATE_NAMES[code]} will be gone for good.`}
-                  deleteAction={removeVisit.bind(null, visit.id)}
-                />
+                <div className="flex flex-wrap items-center gap-1">
+                  {/* Left out once the visit has as many photos as it can have. */}
+                  {(photos.get(visit.id) ?? 0) < PHOTO_MAX_PER_VISIT && (
+                    <Link
+                      href={`/visits/${visit.id}#photos`}
+                      aria-label={`Add photos to the visit on ${visit.visitDate}`}
+                      className={buttonVariants({ variant: "ghost" })}
+                      data-slot="button"
+                    >
+                      <ImagePlus aria-hidden />
+                      Add photos
+                    </Link>
+                  )}
+                  <EditDeleteActions
+                    editHref={`/visits/${visit.id}/edit`}
+                    question="Delete this visit?"
+                    details={`The visit on ${visit.visitDate} in ${STATE_NAMES[code]} will be gone for good.`}
+                    deleteAction={removeVisit.bind(null, visit.id)}
+                  />
+                </div>
               </li>
             ))}
           </ul>
