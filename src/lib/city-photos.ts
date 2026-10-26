@@ -5,14 +5,16 @@
 // Slice 28: a planned trip's visited cities show the photo too, with
 // "Visited <month year>".
 
+import { photoVersion } from "@/lib/photos";
 import type { Visit } from "@/lib/progress";
 import type { TripCity } from "@/lib/rules";
 
-/** A city's photo: which photo, and the date of the visit it's from. */
-export type CityPhoto = { photoId: number; visitDate: string };
+/** A city's photo: which photo, its version (for its address, slice 31), and
+ * the date of the visit it's from. */
+export type CityPhoto = { photoId: number; visitDate: string; version: string };
 
 /** One photo of a city visit, as the database query gives it. */
-export type CityPhotoRow = { state: string; city: string | null; photoId: number; visitDate: string };
+export type CityPhotoRow = { state: string; city: string | null; photoId: number; visitDate: string; fullPath: string };
 
 /** The key a city is found by, e.g. "CO|Denver" (the same key the map's dots use). */
 export function cityKey(state: string, city: string): string {
@@ -27,7 +29,7 @@ export function pickCityPhotos(rows: readonly CityPhotoRow[]): Map<string, CityP
   for (const row of rows) {
     if (!row.city) continue; // only visits with a city count
     const key = cityKey(row.state, row.city);
-    if (!photos.has(key)) photos.set(key, { photoId: row.photoId, visitDate: row.visitDate });
+    if (!photos.has(key)) photos.set(key, { photoId: row.photoId, visitDate: row.visitDate, version: photoVersion(row.fullPath) });
   }
   return photos;
 }

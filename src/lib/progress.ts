@@ -98,7 +98,7 @@ export type CityDot = {
   visitDates: string[];
   trips: { name: string; startDate: string }[];
   /** A visited city's photo and the date of its visit (slice 27; see city-photos.ts). Only the map page adds it. */
-  photo?: { id: number; visitDate: string };
+  photo?: { id: number; visitDate: string; version: string };
 };
 
 /** One dot per city to draw on the map: every visited city, and every city in

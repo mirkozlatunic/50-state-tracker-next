@@ -71,7 +71,10 @@ No other packages without asking me first.
   Photos live in the private Vercel Blob store `tracker-photos` (Preview and
   Production); only their owner can see them, through `/photos/<id>`. On the
   computer and in tests they go to a local folder (`.photos`, or PHOTO_DIR with
-  PHOTO_STORE=local). Deleting a visit deletes its photos. Hobby plan: 1 GB,
+  PHOTO_STORE=local). Deleting a visit deletes its photos. A photo can be
+  replaced (same place, old files deleted; it counts as an upload), and each
+  photo address carries its version (`?v=`), so a replaced photo never shows
+  an old copy. Hobby plan: 1 GB,
   2,000 uploads a month; past a limit Blob stops for 30 days (no charge).
   So each person can upload at most 50 photos per calendar month (Los Angeles
   time); past that, the upload is refused with a clear message.

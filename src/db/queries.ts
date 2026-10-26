@@ -273,6 +273,16 @@ export async function deletePhoto(db: Database, userId: string, id: number): Pro
   return [photo.fullPath, photo.thumbPath];
 }
 
+/** Replace one of my photos with new files (slice 31). It keeps its id, so its
+ * place in the visit and its role as a city's photo stay. Gives back the old
+ * files, to remove from the photo store; null if I had no such photo. */
+export async function replacePhoto(db: Database, userId: string, id: number, photo: PhotoValues): Promise<string[] | null> {
+  const old = await getPhoto(db, userId, id);
+  if (!old) return null;
+  await db.update(visitPhotos).set(photo).where(and(eq(visitPhotos.id, id), eq(visitPhotos.userId, userId)));
+  return [old.fullPath, old.thumbPath];
+}
+
 /** The files of all my photos of one visit (to remove from the store when the visit is deleted). */
 export async function photoPathsForVisit(db: Database, userId: string, visitId: number): Promise<string[]> {
   return (await photosForVisit(db, userId, visitId)).flatMap((photo) => [photo.fullPath, photo.thumbPath]);
@@ -294,7 +304,7 @@ export async function photoCounts(db: Database, userId: string, visitIds: number
  * without one are left out. Both the photo and its visit must be mine. */
 export async function cityPhotos(db: Database, userId: string): Promise<Map<string, CityPhoto>> {
   const rows = await db
-    .select({ state: states.code, city: visits.city, photoId: visitPhotos.id, visitDate: visits.visitDate })
+    .select({ state: states.code, city: visits.city, photoId: visitPhotos.id, visitDate: visits.visitDate, fullPath: visitPhotos.fullPath })
     .from(visitPhotos)
     .innerJoin(visits, eq(visits.id, visitPhotos.visitId))
     .innerJoin(states, eq(states.id, visits.stateId))

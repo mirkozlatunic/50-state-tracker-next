@@ -48,7 +48,7 @@ describe("the map's ?year= filter", () => {
 });
 
 describe("a visited city's photo on its dot", () => {
-  const photos = new Map([["CO|Denver", { photoId: 7, visitDate: "2024-07-04" }]]);
+  const photos = new Map([["CO|Denver", { photoId: 7, visitDate: "2024-07-04", version: "v1" }]]);
 
   test("goes on the dot of its own city, and no other", () => {
     const [denver, boulder, portland] = withCityPhotos(
@@ -59,14 +59,14 @@ describe("a visited city's photo on its dot", () => {
       ],
       photos,
     );
-    expect(denver.photo).toEqual({ id: 7, visitDate: "2024-07-04" });
+    expect(denver.photo).toEqual({ id: 7, visitDate: "2024-07-04", version: "v1" });
     expect(boulder.photo).toBeUndefined();
     expect(portland.photo).toBeUndefined();
   });
 
   test("a visited city that's also in an upcoming trip (a gold ring) shows its photo too", () => {
     const [both] = withCityPhotos([dot({ kind: "upcoming", visitDates: ["2024-07-04"], trips: [{ name: "Back again", startDate: "2026-11-01" }] })], photos);
-    expect(both.photo).toEqual({ id: 7, visitDate: "2024-07-04" });
+    expect(both.photo).toEqual({ id: 7, visitDate: "2024-07-04", version: "v1" });
   });
 
   test("a city I haven't visited gets no photo", () => {

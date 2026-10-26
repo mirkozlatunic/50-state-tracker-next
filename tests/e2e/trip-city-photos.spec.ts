@@ -39,7 +39,7 @@ async function expectVisitedCities(trip: Locator, photoId: number) {
   const denver = visitedRow(trip, "Denver");
   await expect(denver).toContainText("Visited March 2025");
   const image = denver.getByRole("img", { name: DENVER_ALT });
-  await expect(image).toHaveAttribute("src", `/photos/${photoId}?size=thumb`);
+  await expect(image).toHaveAttribute("src", new RegExp(`^/photos/${photoId}\\?size=thumb&v=[a-z0-9]+$`)); // v: the version (slice 31)
   await expect(image).toHaveAttribute("loading", "lazy");
   await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
   // Grand Junction: visited, but no photo.

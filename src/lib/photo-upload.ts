@@ -1,5 +1,5 @@
 // Sending a photo from the browser (slice 18; shared since slice 30 by the
-// visit page and the add-visit form). Before uploading, the browser shrinks
+// visit page and the add-visit form; replacing one since slice 31). Before uploading, the browser shrinks
 // each photo (at most 2000 px) and makes a 400 px preview. Drawing the photo
 // again on a canvas also leaves out its Exif data, where phones keep the place
 // a photo was taken. Browser only: it uses the canvas and fetch.
@@ -31,9 +31,10 @@ async function readImage(file: File): Promise<ImageBitmap | null> {
   }
 }
 
-/** Shrink one chosen file and send it to one of my visits. null when it
+/** Shrink one chosen file and send it: as a new photo of one of my visits
+ * (POST), or in place of one of my photos (PUT, slice 31). null when it
  * worked, otherwise why not (the server's own reason when it refused). */
-export async function uploadPhoto(visitId: number, file: File): Promise<string | null> {
+async function sendPhoto(url: string, method: "POST" | "PUT", file: File): Promise<string | null> {
   const image = await readImage(file);
   if (!image) return NOT_A_PHOTO;
   const full = await shrink(image, FULL_SIZE, 0.85);
@@ -44,10 +45,20 @@ export async function uploadPhoto(visitId: number, file: File): Promise<string |
   form.set("thumb", thumb.blob, "thumb.jpg");
   form.set("width", String(full.width));
   form.set("height", String(full.height));
-  const response = await fetch(`/api/visits/${visitId}/photos`, { method: "POST", body: form });
+  const response = await fetch(url, { method, body: form });
   if (response.ok) return null;
   const body = await response.json().catch(() => null);
   return body?.error ?? "That photo couldn't be added. Please try again.";
+}
+
+/** Add a chosen file to one of my visits. null when it worked, otherwise why not. */
+export function uploadPhoto(visitId: number, file: File): Promise<string | null> {
+  return sendPhoto(`/api/visits/${visitId}/photos`, "POST", file);
+}
+
+/** Put a chosen file in place of one of my photos (slice 31). null when it worked, otherwise why not. */
+export function replacePhotoFile(photoId: number, file: File): Promise<string | null> {
+  return sendPhoto(`/api/photos/${photoId}`, "PUT", file);
 }
 
 /** A little preview of a chosen file for the add-visit form, as a "data:"

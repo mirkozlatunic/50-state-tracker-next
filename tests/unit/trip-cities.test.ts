@@ -13,10 +13,10 @@ const NO_PHOTOS = new Map<string, CityPhoto>();
 describe("visitedTripCities", () => {
   test("a trip city I've visited gets its photo and my most recent visit's date", () => {
     const visits = [visit("CO", "2023-05-01", "Denver"), visit("CO", "2025-03-01", "Denver"), visit("CO", "2024-07-04", "Denver")];
-    const photos = new Map([["CO|Denver", { photoId: 7, visitDate: "2024-07-04" }]]);
+    const photos = new Map([["CO|Denver", { photoId: 7, visitDate: "2024-07-04", version: "v1" }]]);
 
     expect(visitedTripCities([trip(["Denver", "CO"])], visits, photos)).toEqual({
-      "CO|Denver": { lastVisit: "2025-03-01", photo: { photoId: 7, visitDate: "2024-07-04" } },
+      "CO|Denver": { lastVisit: "2025-03-01", photo: { photoId: 7, visitDate: "2024-07-04", version: "v1" } },
     });
   });
 
@@ -36,7 +36,7 @@ describe("visitedTripCities", () => {
 
   test("a city of the same name in another state doesn't count", () => {
     const visits = [visit("OR", "2024-07-04", "Portland")];
-    const photos = new Map([["OR|Portland", { photoId: 3, visitDate: "2024-07-04" }]]);
+    const photos = new Map([["OR|Portland", { photoId: 3, visitDate: "2024-07-04", version: "v1" }]]);
 
     expect(visitedTripCities([trip(["Portland", "ME"])], visits, photos)).toEqual({});
   });

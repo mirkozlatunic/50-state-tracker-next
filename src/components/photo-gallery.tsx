@@ -2,11 +2,12 @@
 // A visit's photos on its visit page (slice 18): small previews, "Add photos",
 // and a pop-up with the big photo and "Delete photo". Shrinking and sending
 // each photo is in photo-upload.ts (shared with the add-visit form since slice 30).
+// Slice 31: "Replace photo" in the pop-up puts a new file in a photo's place.
 
 import { useId, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, RefreshCw } from "lucide-react";
 import { removePhoto } from "@/app/(app)/visits/actions";
 import {
   AlertDialog,
@@ -21,10 +22,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { uploadPhoto } from "@/lib/photo-upload";
-import { PHOTO_MAX_PER_VISIT } from "@/lib/photos";
+import { replacePhotoFile, uploadPhoto } from "@/lib/photo-upload";
+import { PHOTO_MAX_PER_VISIT, photoSrc } from "@/lib/photos";
 
-export type GalleryPhoto = { id: number; width: number; height: number };
+/** A photo as the gallery shows it; `version` is part of its address (slice 31). */
+export type GalleryPhoto = { id: number; width: number; height: number; version: string };
 
 const TOO_MANY = `A visit can have at most ${PHOTO_MAX_PER_VISIT} photos.`;
 
@@ -71,7 +73,7 @@ export function PhotoGallery({ visitId, photos }: { visitId: number; photos: Gal
                 className="block aspect-square w-full overflow-hidden rounded-lg border focus-visible:outline-2 focus-visible:outline-ring"
               >
                 {/* unoptimized: /photos/... is private, so Next.js can't fetch it to resize. */}
-                <Image src={`/photos/${photo.id}?size=thumb`} alt="" width={400} height={400} unoptimized className="size-full object-cover" />
+                <Image src={photoSrc(photo.id, photo.version, "thumb")} alt="" width={400} height={400} unoptimized className="size-full object-cover" />
               </button>
             </li>
           ))}
@@ -127,17 +129,70 @@ export function PhotoGallery({ visitId, photos }: { visitId: number; photos: Gal
               Photo {open + 1} of {photos.length}
             </DialogTitle>
             <Image
-              src={`/photos/${shown.id}`}
+              src={photoSrc(shown.id, shown.version)}
               alt={`Photo ${open + 1} of ${photos.length}`}
               width={shown.width}
               height={shown.height}
               unoptimized
               className="max-h-[75vh] w-full rounded-lg object-contain"
             />
-            <DeletePhotoButton photoId={shown.id} onDeleted={() => setOpen(null)} />
+            <PhotoActions photoId={shown.id} onDeleted={() => setOpen(null)} onReplaced={() => router.refresh()} />
           </DialogContent>
         )}
       </Dialog>
+    </div>
+  );
+}
+
+/** The pop-up's buttons: "Replace photo" and "Delete photo", on one line,
+ * with what's happening (or what went wrong) below. */
+function PhotoActions({ photoId, onDeleted, onReplaced }: { photoId: number; onDeleted: () => void; onReplaced: () => void }) {
+  const inputId = useId();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /** Send the chosen file in place of this photo; on success, show the new one. */
+  async function replace(file: File) {
+    setError(null);
+    setBusy(true);
+    const failed = await replacePhotoFile(photoId, file);
+    setBusy(false);
+    if (failed) setError(failed);
+    else onReplaced(); // reload the page's data: the photo comes back with its new version
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* The real file picker is hidden; its label is the button you see. */}
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          disabled={busy}
+          className="sr-only"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = ""; // so the same file can be chosen again
+            if (file) void replace(file);
+          }}
+        />
+        <label htmlFor={inputId} data-slot="button" className={buttonVariants({ variant: "outline", className: "cursor-pointer" })}>
+          <RefreshCw aria-hidden />
+          Replace photo
+        </label>
+        <DeletePhotoButton photoId={photoId} onDeleted={onDeleted} />
+      </div>
+      {busy && (
+        <p role="status" className="text-sm text-muted-foreground">
+          Replacing the photo…
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ export function dotDetails(dot: CityDot): string {
 export function withCityPhotos(dots: CityDot[], photos: Map<string, CityPhoto>): CityDot[] {
   return dots.map((dot) => {
     const photo = dot.visitDates.length ? photos.get(cityKey(dot.state, dot.name)) : undefined;
-    return photo ? { ...dot, photo: { id: photo.photoId, visitDate: photo.visitDate } } : dot;
+    return photo ? { ...dot, photo: { id: photo.photoId, visitDate: photo.visitDate, version: photo.version } } : dot;
   });
 }
 
