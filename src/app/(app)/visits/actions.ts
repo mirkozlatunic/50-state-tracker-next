@@ -25,10 +25,18 @@ import { todayIn } from "@/lib/dates";
 import { checkVisitForm, type VisitFormValues } from "@/lib/visit-form";
 import { checkStory } from "@/lib/visit-story";
 
-export type VisitFormState = { errors: string[]; values: VisitFormValues | null };
+/** `saved` (slice 30): a new visit was saved and its photos are still to be
+ * sent from the browser; it then goes to `next` itself. */
+export type VisitFormState = {
+  errors: string[];
+  values: VisitFormValues | null;
+  saved?: { visitId: number; next: string };
+};
 
 /** Save the visit form: a new visit (visitId null) or changes to one.
  * OK: go to the visit's state page (with ?milestone=10 when it reached one).
+ * A new visit with photos chosen (with_photos=1): give back its id and that
+ * address instead, so the browser can upload the photos first (slice 30).
  * Not OK: show the errors and what was typed. */
 export async function saveVisit(visitId: number | null, _previous: VisitFormState, form: FormData): Promise<VisitFormState> {
   const userId = await requireUserId();
@@ -36,8 +44,9 @@ export async function saveVisit(visitId: number | null, _previous: VisitFormStat
   if (!result.ok) return { errors: result.errors, values: result.values };
 
   const db = await appDatabase();
+  let newId: number | null = null;
   if (visitId === null) {
-    await addVisit(db, userId, result.visit);
+    newId = await addVisit(db, userId, result.visit);
   } else {
     if (!(await getVisit(db, userId, visitId))) return { errors: ["This visit doesn't exist anymore."], values: null };
     await updateVisit(db, userId, visitId, result.visit);
@@ -47,7 +56,9 @@ export async function saveVisit(visitId: number | null, _previous: VisitFormStat
   // let the state page show the celebration (once: it cleans up the address).
   const milestone = newMilestone(await visitedStateCount(db, userId), await celebratedMilestone(db, userId));
   if (milestone) await setCelebratedMilestone(db, userId, milestone);
-  redirect(`/states/${result.visit.state}${milestone ? `?milestone=${milestone}` : ""}`);
+  const next = `/states/${result.visit.state}${milestone ? `?milestone=${milestone}` : ""}`;
+  if (newId !== null && form.get("with_photos") === "1") return { errors: [], values: null, saved: { visitId: newId, next } };
+  redirect(next);
 }
 
 /** Delete a visit (its photos too) and go back to its state's page. */

@@ -2,6 +2,7 @@
 // it may be, how many a visit can have, and where each one is stored.
 // Slice 23: how many a person can upload in a month.
 // Slice 24: each person's own folder, so their photos can be deleted all at once.
+// Slice 30: choosing photos in the add-visit form.
 
 /** The most photos one visit can have. */
 export const PHOTO_MAX_PER_VISIT = 6;
@@ -25,6 +26,20 @@ export function photoLimitMessage(month: string): string {
   // December rolls over to January of the next year by itself.
   const next = new Date(Date.UTC(year, monthNumber, 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" });
   return `You've added ${PHOTO_MAX_PER_MONTH} photos this month, the most for one month. You can add more from ${next} 1.`;
+}
+
+/** Photos chosen in the add-visit form (slice 30): the new picks go after the
+ * ones already chosen, up to a visit's 6. `tooMany`: some were left out. */
+export function keepPhotos<T>(chosen: readonly T[], picked: readonly T[]): { kept: T[]; tooMany: boolean } {
+  const all = [...chosen, ...picked];
+  return { kept: all.slice(0, PHOTO_MAX_PER_VISIT), tooMany: all.length > PHOTO_MAX_PER_VISIT };
+}
+
+/** What the add-visit form says when photo `number` of `total` couldn't be
+ * added after the visit was saved (slice 30). */
+export function photoFailedMessage(number: number, total: number, reason: string): string {
+  const which = total === 1 ? "the photo" : `photo ${number} of ${total}`;
+  return `Visit saved, but ${which} couldn't be added: ${reason}`;
 }
 
 /** The biggest file accepted, in bytes (3 MB). The browser shrinks photos to
