@@ -61,7 +61,13 @@ async function VisitContent({ params }: Pick<PageProps<"/visits/[id]">, "params"
         />
       </div>
       {visit.note && <p>{visit.note}</p>}
-      <section aria-labelledby="photos-heading" className="flex flex-col gap-3 border-t pt-6">
+      {/* id="photos": the state page's "Add photos" jumps here (slice 29); scroll-mt
+          leaves room for the floating header above the heading. */}
+      <section
+        id="photos"
+        aria-labelledby="photos-heading"
+        className="flex scroll-mt-[calc(env(safe-area-inset-top)+5rem)] flex-col gap-3 border-t pt-6"
+      >
         <h2 id="photos-heading" className="text-lg font-semibold">
           Photos
         </h2>

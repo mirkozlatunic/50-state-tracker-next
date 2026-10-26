@@ -83,6 +83,8 @@ sharing" or "Make a new link"); a reached milestone gets a calm gold card.
   has one) and "Visited <month year>" on `/trips`, the `/years` trip cards and,
   on phones, the next-trip card on `/map`. The shared page never shows photos,
   dates or cities.
+- **Slice 29:** an "Add photos" button on each visit row of a state page, which
+  opens the visit's page at its photos (left out once a visit has 6).
 
 ## Still open
 
