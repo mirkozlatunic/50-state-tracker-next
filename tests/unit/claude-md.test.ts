@@ -50,6 +50,9 @@ const KEPT_RULES = [
   "Tests use their own temporary database, never my real one.",
   "Plan first, then code. Wait for my OK before writing code.",
   "Write the tests first and show them to me before writing the code.",
+  // Slice 27: which photo a city shows, and that the shared page never shows one.
+  "A visited city shows a photo: the first photo (oldest upload) of my most recent visit to that city that has photos.",
+  "The shared page (`/share/<code>`) never shows photos, visit dates or cities, even though it uses the same map.",
 ];
 
 describe("CLAUDE.md", () => {

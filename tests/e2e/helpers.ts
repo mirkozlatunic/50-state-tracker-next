@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import { expect, type Page } from "@playwright/test";
-import { openDatabase, setupDatabase } from "@/db";
+import { readFileSync } from "node:fs";
+import { openDatabase, setupDatabase, type Database } from "@/db";
+import { addPhoto } from "@/db/queries";
+import { localPhotoStore } from "@/lib/photo-store";
 
 // The test app's own database. Made up for the tests only: the real data is never used here.
 export const TEST_DB_URL = `file:${join(tmpdir(), "50-state-tracker-e2e.sqlite")}`;
@@ -101,4 +104,19 @@ export function daysFromToday(days: number): string {
   const date = new Date(`${today()}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+/** Add photo number `n` to visit `visitId` of `person`'s, straight into the
+ * test database and the test photo folder (a real small JPEG as both the
+ * photo and its preview). Returns the photo's id. */
+export async function seedPhoto(db: Database, visitId: number, n: number, person: "A" | "B" = "A"): Promise<number> {
+  const bytes = new Uint8Array(readFileSync(join(__dirname, "fixtures", "small-photo.jpg")));
+  const folder = `photos/e2e-${person}`;
+  const paths = { fullPath: `${folder}/full-${visitId}-${n}.jpg`, thumbPath: `${folder}/thumb-${visitId}-${n}.jpg` };
+  const store = localPhotoStore(TEST_PHOTO_DIR);
+  await store.put(paths.fullPath, bytes);
+  await store.put(paths.thumbPath, bytes);
+  const id = await addPhoto(db, userId(person), visitId, { ...paths, width: 400, height: 400 });
+  if (typeof id !== "number") throw new Error(`photo ${n} wasn't added to visit ${visitId}`);
+  return id;
 }

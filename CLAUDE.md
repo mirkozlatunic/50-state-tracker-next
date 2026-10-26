@@ -73,6 +73,11 @@ No other packages without asking me first.
   2,000 uploads a month; past a limit Blob stops for 30 days (no charge).
   So each person can upload at most 50 photos per calendar month (Los Angeles
   time); past that, the upload is refused with a clear message.
+- A visited city shows a photo: the first photo (oldest upload) of my most
+  recent visit to that city that has photos. Only visits with a city count;
+  a city without such a photo shows text only. No new uploads or tables: it
+  reuses the 400 px previews (`/photos/<id>?size=thumb`). On the map it's in
+  the city's pop-up, loaded only when the pop-up opens.
 - A planned trip has: a name, start date, end date, one or more states,
   and optionally cities.
 - Cities come from the public-domain US Census Gazetteer files (carried over
@@ -136,6 +141,8 @@ No other packages without asking me first.
   only which states I've visited and the count: no dates, notes, cities, trips,
   stories or photos, no links into the app, not listed by search engines. A
   new link replaces the old one at once; "Stop sharing" ends it. Links don't expire.
+- The shared page (`/share/<code>`) never shows photos, visit dates or cities,
+  even though it uses the same map.
 - Future ideas are in `docs/roadmap.md`. Don't build any of them without being asked.
 
 ## Folder and secret rules

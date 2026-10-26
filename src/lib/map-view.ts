@@ -1,6 +1,8 @@
 // Small helpers for the map page.
 
+import { cityKey, type CityPhoto } from "@/lib/city-photos";
 import { MAP_HEIGHT, MAP_WIDTH } from "@/lib/data/map";
+import { STATE_NAMES } from "@/lib/data/states";
 import type { CityDot } from "@/lib/progress";
 
 /** A dot's details in one line, e.g.
@@ -10,6 +12,21 @@ export function dotDetails(dot: CityDot): string {
   if (dot.visitDates.length) parts.push(`visited ${dot.visitDates.join(", ")}`);
   if (dot.trips.length) parts.push(`upcoming: ${dot.trips.map((trip) => `${trip.name} (${trip.startDate})`).join("; ")}`);
   return parts.join(" · ");
+}
+
+/** Give each visited city's dot its photo (slice 27). Dots of cities I haven't
+ * visited, and cities without a photo, stay as they are. */
+export function withCityPhotos(dots: CityDot[], photos: Map<string, CityPhoto>): CityDot[] {
+  return dots.map((dot) => {
+    const photo = dot.visitDates.length ? photos.get(cityKey(dot.state, dot.name)) : undefined;
+    return photo ? { ...dot, photo: { id: photo.photoId, visitDate: photo.visitDate } } : dot;
+  });
+}
+
+/** A city photo's alt text (what screen readers say), e.g.
+ * "Photo from the visit to Denver, Colorado on 2024-07-04". */
+export function cityPhotoAlt(dot: Pick<CityDot, "name" | "state">, visitDate: string): string {
+  return `Photo from the visit to ${dot.name}, ${STATE_NAMES[dot.state]} on ${visitDate}`;
 }
 
 /** Where a dot sits over the map, as a share of its width and height, so it

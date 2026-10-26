@@ -1,9 +1,11 @@
 // Slice 20: a shareable progress map. Off until I turn it on (on /sharing);
 // then /share/<code> shows anyone with the link which states I've visited, and
 // nothing else. A new link replaces the old one; "Stop sharing" ends it.
+// Slice 27: the shared page never shows photos, dates or cities, not even
+// hidden in the page's HTML.
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { addTrip, addVisit } from "@/db/queries";
-import { daysFromToday, logIn, openNavMenu, openTestDatabase, resetData, USER_B_EMAIL, userId } from "./helpers";
+import { daysFromToday, logIn, openNavMenu, openTestDatabase, resetData, seedPhoto, USER_B_EMAIL, userId } from "./helpers";
 
 /** Three visited states (with notes and a city) and an upcoming trip, for test person A. */
 async function seed() {
@@ -111,6 +113,25 @@ test.describe("the shared page (/share/<code>)", () => {
       await expect(visitor.getByText(secret)).toHaveCount(0);
     }
     await expect(visitor.getByRole("navigation", { name: "Main" })).toHaveCount(0);
+  });
+
+  test("its HTML holds no photo address, city or visit date, even when my city visits have photos", async ({ page, browser }) => {
+    await seed();
+    const db = await openTestDatabase();
+    const denver = await addVisit(db, userId(), { state: "CO", visitDate: "2024-08-02", note: "", city: "Denver" });
+    await seedPhoto(db, denver, 1);
+    db.$client.close();
+    const path = await shareMap(page);
+    // The page as it's sent, read by someone who isn't signed in. This also
+    // covers React's page data, which comes inside the same HTML.
+    const response = await (await stranger(browser)).request.get(path);
+    expect(response.status()).toBe(200);
+    const html = await response.text();
+    // It really is the shared map (React puts "<!-- -->" between a number and the words next to it).
+    expect(html).toMatch(/3(<!-- -->)? of 50 states visited/); // CA, CO and TX
+    for (const secret of ["/photos/", "San Francisco", "Denver", "2024-07-04", "2024-08-02"]) {
+      expect(html, secret).not.toContain(secret);
+    }
   });
 
   test("search engines are asked not to list it, and link previews get a picture of the map", async ({ page, browser }) => {
