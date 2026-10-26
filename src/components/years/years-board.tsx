@@ -20,10 +20,12 @@ import {
 import { moveTrip } from "@/app/(app)/trips/actions";
 import { TripCard } from "@/components/years/trip-card";
 import { buttonVariants } from "@/components/ui/button";
+import type { VisitedCity } from "@/lib/city-photos";
 import type { YearPlan } from "@/lib/progress";
 import { moveChoices } from "@/lib/years-view";
 
-export function YearsBoard({ plan }: { plan: YearPlan[] }) {
+/** `visitedCities`: the trips' cities I've visited (see visitedTripCities). */
+export function YearsBoard({ plan, visitedCities }: { plan: YearPlan[]; visitedCities: Record<string, VisitedCity> }) {
   const [error, setError] = useState<string | null>(null);
   // useTransition: the page stays usable while the server moves the trip.
   const [pending, startTransition] = useTransition();
@@ -63,6 +65,7 @@ export function YearsBoard({ plan }: { plan: YearPlan[] }) {
                 <TripCard
                   key={trip.id}
                   trip={trip}
+                  visitedCities={visitedCities}
                   moveTo={moveChoices(years, column.year)}
                   onMove={move}
                   pending={pending}

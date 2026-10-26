@@ -53,6 +53,8 @@ const KEPT_RULES = [
   // Slice 27: which photo a city shows, and that the shared page never shows one.
   "A visited city shows a photo: the first photo (oldest upload) of my most recent visit to that city that has photos.",
   "The shared page (`/share/<code>`) never shows photos, visit dates or cities, even though it uses the same map.",
+  // Slice 28: a planned trip's visited cities.
+  "On a planned trip, each city I've already visited shows its photo (small, if it has one) and \"Visited <month year>\" (my most recent visit there).",
 ];
 
 describe("CLAUDE.md", () => {

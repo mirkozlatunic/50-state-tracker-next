@@ -6,7 +6,8 @@ import { PageBody, PageTitle } from "@/components/page-title";
 import { YearsBoard } from "@/components/years/years-board";
 import { appDatabase } from "@/db/app";
 import { requireUserId } from "@/lib/auth/server";
-import { loadTrips, loadVisits } from "@/db/queries";
+import { cityPhotos, loadTrips, loadVisits } from "@/db/queries";
+import { visitedTripCities } from "@/lib/city-photos";
 import { todayIn } from "@/lib/dates";
 import { yearPlan } from "@/lib/progress";
 
@@ -33,6 +34,9 @@ async function Years() {
   await connection();
   const userId = await requireUserId(); // only this person's visits and trips
   const db = await appDatabase();
-  const plan = yearPlan({ visits: await loadVisits(db, userId), trips: await loadTrips(db, userId) }, todayIn());
-  return <YearsBoard plan={plan} />;
+  const data = { visits: await loadVisits(db, userId), trips: await loadTrips(db, userId) };
+  const plan = yearPlan(data, todayIn());
+  // The shown trips' cities I've visited, with their photos (slice 28).
+  const visited = visitedTripCities(plan.flatMap((column) => column.trips), data.visits, await cityPhotos(db, userId));
+  return <YearsBoard plan={plan} visitedCities={visited} />;
 }

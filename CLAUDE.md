@@ -78,6 +78,10 @@ No other packages without asking me first.
   a city without such a photo shows text only. No new uploads or tables: it
   reuses the 400 px previews (`/photos/<id>?size=thumb`). On the map it's in
   the city's pop-up, loaded only when the pop-up opens.
+- On a planned trip, each city I've already visited shows its photo (small,
+  if it has one) and "Visited <month year>" (my most recent visit there).
+  Cities I haven't visited stay as they are; on phones the next-trip card on
+  `/map` shows them too.
 - A planned trip has: a name, start date, end date, one or more states,
   and optionally cities.
 - Cities come from the public-domain US Census Gazetteer files (carried over

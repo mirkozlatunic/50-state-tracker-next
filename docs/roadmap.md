@@ -75,6 +75,14 @@ sharing" or "Make a new link"); a reached milestone gets a calm gold card.
 - **Slices 22–22e:** the Google profile picture on the account button, the logo's name as a tooltip, a soft fade between light and dark, and fixes from four code reviews.
 - **Slice 25:** the README as a showcase, with the setup in `docs/operations.md` and `pnpm screenshots`.
 - **Slice 26:** the design rules moved from CLAUDE.md to `docs/design-rules.md`.
+- **Slices 27 and 28: city photos.** A visited city shows a photo: the first
+  photo (oldest upload) of my most recent visit to that city that has photos,
+  reusing the 400 px previews (no new table or uploads). Slice 27 puts it in
+  the city's map pop-up, loaded only when the pop-up opens. Slice 28 shows it
+  on planned trips: each trip city I've visited gets its photo (small, if it
+  has one) and "Visited <month year>" on `/trips`, the `/years` trip cards and,
+  on phones, the next-trip card on `/map`. The shared page never shows photos,
+  dates or cities.
 
 ## Still open
 

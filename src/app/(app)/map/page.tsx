@@ -13,6 +13,7 @@ import { appDatabase } from "@/db/app";
 import { requireUserId } from "@/lib/auth/server";
 import { cityPhotos, loadTrips, loadVisits, visitedStateCount } from "@/db/queries";
 import { todayIn } from "@/lib/dates";
+import { visitedTripCities } from "@/lib/city-photos";
 import { readMapYear, withCityPhotos } from "@/lib/map-view";
 import { cityDots, nextTrip, regionSummaries, stateStatuses, tripYears } from "@/lib/progress";
 
@@ -23,7 +24,8 @@ export const metadata: Metadata = { title: "Map" };
 // region cards show instead. ?year=2027 only counts trips starting in 2027.
 // Since slice 21 it's the first page after signing in, so your numbers and
 // milestones (once on the home page) sit at the top.
-// Since slice 27 a visited city's pop-up shows its photo (see city-photos.ts).
+// Since slice 27 a visited city's pop-up shows its photo (see city-photos.ts),
+// and since slice 28 so do the next trip's visited cities on phones.
 export default function MapPage({ searchParams }: PageProps<"/map">) {
   return (
     <PageBody>
@@ -53,7 +55,9 @@ async function MapContent({ searchParams }: Pick<PageProps<"/map">, "searchParam
   const db = await appDatabase();
   const data = { visits: await loadVisits(db, userId), trips: await loadTrips(db, userId) };
   const today = todayIn();
-  const dots = withCityPhotos(cityDots(data, today, year ?? undefined), await cityPhotos(db, userId));
+  const photos = await cityPhotos(db, userId);
+  const dots = withCityPhotos(cityDots(data, today, year ?? undefined), photos);
+  const next = nextTrip(data.trips, today);
 
   return (
     <>
@@ -61,7 +65,7 @@ async function MapContent({ searchParams }: Pick<PageProps<"/map">, "searchParam
 
       {/* Phones: the next trip and the region cards. */}
       <div className="flex flex-col gap-3 sm:hidden">
-        <NextTripCard next={nextTrip(data.trips, today)} />
+        <NextTripCard next={next} visitedCities={next ? visitedTripCities([next.trip], data.visits, photos) : {}} />
         {regionSummaries(data, today, year ?? undefined).map((region) => (
           <RegionCard key={region.name} region={region} />
         ))}
